@@ -1,0 +1,89 @@
+{
+  "id": "mansion_clasica",
+  "name": "Asesinato en la Mansión",
+  "version": 1,
+  "minPlayers": 4,
+  "maxPlayers": 10,
+  "roles": [
+    {
+      "id": "detective",
+      "name": "Detective",
+      "team": "investigadores",
+      "description": "Reúne pruebas y señala al culpable antes de que termine la noche.",
+      "count": { "min": 1, "max": 1 },
+      "weight": 0,
+      "knowsTeammates": false,
+      "visibility": {
+        "default": "partial",
+        "rules": [
+          { "tags": ["fisica", "documento"], "level": "full" },
+          { "tags": ["coartada_falsa"], "level": "partial" }
+        ]
+      },
+      "objectives": [
+        { "id": "acusar", "type": "accuse_culprit", "description": "Acusa correctamente al asesino." },
+        { "id": "reunir", "type": "collect_evidence", "description": "Reúne 3 pruebas físicas.", "params": { "tags": ["fisica"], "count": 3 } }
+      ],
+      "modifiers": [
+        { "id": "forensic_eye", "params": { "tags": ["fisica"] } },
+        { "id": "extended_reach", "params": { "multiplier": 1.5 } }
+      ]
+    },
+    {
+      "id": "asesino",
+      "name": "Asesino",
+      "team": "culpables",
+      "description": "Evita que las pruebas te señalen. Puedes destruir pistas.",
+      "count": { "min": 1, "max": 2 },
+      "weight": 0,
+      "knowsTeammates": true,
+      "visibility": {
+        "default": "full",
+        "rules": []
+      },
+      "objectives": [
+        { "id": "ocultar", "type": "keep_evidence_hidden", "description": "Que nadie más reúna 2 pruebas incriminatorias.", "params": { "tags": ["incriminatoria"], "maxCollectedByOthers": 1 } }
+      ],
+      "modifiers": [
+        { "id": "can_destroy_evidence", "params": { "tags": ["incriminatoria"] } },
+        { "id": "inventory_capacity", "params": { "delta": -2 } }
+      ]
+    },
+    {
+      "id": "mayordomo",
+      "name": "Mayordomo",
+      "team": "investigadores",
+      "description": "Conoces la casa: ves los documentos aunque estén ocultos.",
+      "count": { "min": 0, "max": 1 },
+      "weight": 2,
+      "knowsTeammates": false,
+      "visibility": {
+        "default": "partial",
+        "rules": [
+          { "tags": ["documento", "llave"], "level": "full" },
+          { "tags": ["fisica"], "level": "hidden" }
+        ]
+      },
+      "objectives": [
+        { "id": "llaves", "type": "collect_evidence", "description": "Recupera las 2 llaves de la casa.", "params": { "tags": ["llave"], "count": 2 } }
+      ],
+      "modifiers": [
+        { "id": "inventory_capacity", "params": { "delta": 2 } }
+      ]
+    },
+    {
+      "id": "invitado",
+      "name": "Invitado",
+      "team": "investigadores",
+      "description": "Un invitado más. Observa, recoge y vota.",
+      "count": { "min": 0, "max": 10 },
+      "weight": 5,
+      "knowsTeammates": false,
+      "visibility": { "default": "partial", "rules": [] },
+      "objectives": [
+        { "id": "acusar", "type": "accuse_culprit", "description": "Acusa correctamente al asesino." }
+      ],
+      "modifiers": []
+    }
+  ]
+}

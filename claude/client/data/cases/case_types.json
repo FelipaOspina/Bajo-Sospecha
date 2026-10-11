@@ -1,0 +1,10 @@
+{
+  "_comentario": "Tipos de caso del selector de la sala. scenarios = ids de escenario (data/scenarios/) de ese tipo; sin escenarios, el tipo sale deshabilitado (Próximamente).",
+  "types": [
+    { "id": "fraude", "name": "Fraude", "scenarios": ["nexuscore_fraude", "caso_fraude_tech_startup"] },
+    { "id": "secuestro", "name": "Secuestro", "scenarios": [] },
+    { "id": "infidelidad", "name": "Infidelidad", "scenarios": [] },
+    { "id": "robo", "name": "Robo", "scenarios": [] },
+    { "id": "investigacion", "name": "Investigación", "scenarios": [] }
+  ]
+}

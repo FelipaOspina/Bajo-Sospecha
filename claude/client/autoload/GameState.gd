@@ -20,6 +20,12 @@ func _on_message(msg: Dictionary) -> void:
 		Protocol.M_EVENT:
 			_route_event(msg["event"])
 
+## Sin sala (vuelta al menú): todo lo que dependa del estado se vacía.
+func reset() -> void:
+	snapshot = {}
+	version = -1
+	snapshot_applied.emit(snapshot)
+
 func _replace(s: Dictionary) -> void:
 	var previous_role = snapshot.get("you", {}) if snapshot.get("you") else {}
 	snapshot = s
@@ -79,11 +85,29 @@ func _route_event(e: Dictionary) -> void:
 			EventBus.channel_finished.emit(e["by"], e["ok"], str(e.get("reason", "")))
 		Protocol.E_GAME_OVER:
 			EventBus.game_over.emit(e["resolution"])
+		Protocol.E_CHAT:
+			EventBus.chat_received.emit(str(e.get("by", "")), str(e.get("name", "")), str(e.get("text", "")), int(e.get("at", 0)))
+		Protocol.E_ABILITY_USED:
+			var ends = e.get("endsAt")
+			EventBus.ability_used.emit(str(e.get("by", "")), str(e.get("abilityId", "")), int(ends) if ends != null else -1,
+				e.get("marks", []) if e.get("marks") is Array else [], e.get("affected", []) if e.get("affected") is Array else [])
 
 # ───── Consultas de conveniencia ─────
 
 func local_player_id() -> String:
 	return Network.player_id
+
+## Estamos dentro de una sala (en el lobby o en partida).
+func in_room() -> bool:
+	return snapshot.get("lobby") is Dictionary
+
+func phase() -> String:
+	return str(snapshot.get("phase", ""))
+
+## Datos de la sala: código, visibilidad, anfitrión, plazas y cuenta atrás.
+func lobby() -> Dictionary:
+	var l = snapshot.get("lobby")
+	return l if l is Dictionary else {}
 
 func my_private_state() -> Dictionary:
 	var you = snapshot.get("you")

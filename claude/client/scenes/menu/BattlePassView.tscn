@@ -1,0 +1,147 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/menu/battle_pass_view.gd" id="1"]
+
+[node name="BattlePassView" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("1")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="TitleBox" type="VBoxContainer" parent="Layout/Header"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="PassTitle" type="Label" parent="Layout/Header/TitleBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "EXECUTIVE PASS"
+
+[node name="SeasonLabel" type="Label" parent="Layout/Header/TitleBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Temporada 1"
+
+[node name="XpBox" type="VBoxContainer" parent="Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 4
+
+[node name="LevelLabel" type="Label" parent="Layout/Header/XpBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "NIVEL 1 / 50"
+
+[node name="XpBar" type="ProgressBar" parent="Layout/Header/XpBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+show_percentage = false
+
+[node name="XpLabel" type="Label" parent="Layout/Header/XpBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 / 400 XP"
+
+[node name="ClaimAllButton" type="Button" parent="Layout/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Reclamar todo"
+
+[node name="PremiumButton" type="Button" parent="Layout/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_vertical = 4
+text = "Desbloquear Premium"
+
+[node name="PremiumChip" type="PanelContainer" parent="Layout/Header"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="PremiumChipLabel" type="Label" parent="Layout/Header/PremiumChip"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.906, 0.659, 1)
+text = "PREMIUM ACTIVO"
+
+[node name="TrackPanel" type="PanelContainer" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TrackRow" type="HBoxContainer" parent="Layout/TrackPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RowLabels" type="VBoxContainer" parent="Layout/TrackPanel/TrackRow"]
+custom_minimum_size = Vector2(76, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Spacer" type="Control" parent="Layout/TrackPanel/TrackRow/RowLabels"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+
+[node name="FreeRowLabel" type="Label" parent="Layout/TrackPanel/TrackRow/RowLabels"]
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.749, 0.965, 1, 1)
+text = "GRATIS"
+vertical_alignment = 1
+
+[node name="PremiumRowLabel" type="Label" parent="Layout/TrackPanel/TrackRow/RowLabels"]
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.906, 0.659, 1)
+text = "PREMIUM"
+vertical_alignment = 1
+
+[node name="TrackScroll" type="ScrollContainer" parent="Layout/TrackPanel/TrackRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 304)
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_scroll_mode = 0
+
+[node name="Track" type="HBoxContainer" parent="Layout/TrackPanel/TrackRow/TrackScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CollectionTitle" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Colección de la temporada · cosméticos del pase (los 12 animales son gratis)"
+
+[node name="CollectionScroll" type="ScrollContainer" parent="Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+vertical_scroll_mode = 0
+
+[node name="Collection" type="HBoxContainer" parent="Layout/CollectionScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6

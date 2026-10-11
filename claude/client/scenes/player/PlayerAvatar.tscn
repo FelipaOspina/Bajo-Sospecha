@@ -1,0 +1,54 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/PlayerAvatar.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/ProceduralChibiAvatar.gd" id="2"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_feet"]
+radius = 6.0
+height = 26.0
+
+[node name="PlayerAvatar" type="CharacterBody2D"]
+collision_layer = 2
+motion_mode = 1
+script = ExtResource("1")
+
+[node name="FeetCollision" type="CollisionShape2D" parent="."]
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_feet")
+
+[node name="Visuals" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="DropShadow" type="Polygon2D" parent="Visuals"]
+z_index = -1
+light_mask = 0
+color = Color(0, 0, 0, 0.55)
+polygon = PackedVector2Array(18.0, 0.0, 17.1, 2.0, 14.6, 3.8, 10.6, 5.3, 5.6, 6.2, 0.0, 6.5, -5.6, 6.2, -10.6, 5.3, -14.6, 3.8, -17.1, 2.0, -18.0, 0.0, -17.1, -2.0, -14.6, -3.8, -10.6, -5.3, -5.6, -6.2, -0.0, -6.5, 5.6, -6.2, 10.6, -5.3, 14.6, -3.8, 17.1, -2.0)
+
+[node name="BodySprite" type="AnimatedSprite2D" parent="Visuals"]
+
+[node name="ChibiBody" type="Node2D" parent="Visuals/BodySprite"]
+scale = Vector2(0.75, 0.75)
+script = ExtResource("2")
+
+[node name="OverheadAnchor" type="Node2D" parent="."]
+position = Vector2(0, -62)
+
+[node name="OverheadLayer" type="CanvasLayer" parent="."]
+layer = 4
+follow_viewport_enabled = true
+
+[node name="NameTag" type="PanelContainer" parent="OverheadLayer"]
+offset_right = 60.0
+offset_bottom = 20.0
+mouse_filter = 2
+
+[node name="NameTagLabel" type="Label" parent="OverheadLayer/NameTag"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.886, 0.91, 0.941, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 12
+text = "Jugador"
+horizontal_alignment = 1
+vertical_alignment = 1

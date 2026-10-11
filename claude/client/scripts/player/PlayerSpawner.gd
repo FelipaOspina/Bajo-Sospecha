@@ -1,9 +1,12 @@
 class_name PlayerSpawner
 extends Node2D
 ## Crea y elimina los personajes según la lista de jugadores del servidor.
-## El local lleva cámara e InteractionDetector; los remotos se interpolan.
+## Cada uno es un PlayerAvatar (scenes/player/PlayerAvatar.tscn). El local lleva
+## cámara e InteractionDetector; los remotos se interpolan.
 
 signal local_player_spawned(player: Player)
+
+const AVATAR_SCENE := preload("res://scenes/player/PlayerAvatar.tscn")
 
 @export var role_manager: RoleManager
 @export var detector_radius := 220.0
@@ -23,45 +26,23 @@ func _sync(s: Dictionary) -> void:
 		var node: Player = _players.get(p["id"])
 		if node == null:
 			node = _spawn(p)
-		node.modulate.a = 1.0 if p.get("connected", true) else 0.35
+		node.set_connected(p.get("connected", true))
 	for id in _players.keys():
 		if not seen.has(id):
 			_players[id].queue_free()
 			_players.erase(id)
 
 func _spawn(p: Dictionary) -> Player:
-	var node := Player.new()
+	var node: PlayerAvatar = AVATAR_SCENE.instantiate()
 	node.name = "Player_" + p["id"].left(8)
 	node.player_id = p["id"]
 	node.is_local = p["id"] == GameState.local_player_id()
+	node.display_name = p.get("name", "?")
+	# Skin de animal que reparte el servidor (pública, no depende del rol).
+	node.skin_id = str(p.get("skinId", SkinCatalog.fallback_for(p["id"])))
 	node.teleport(Protocol.vec2_from(p["position"]))
-	# Los jugadores no chocan entre sí (capa 2, solo choca con el mapa en la capa 1):
-	# si se empujaran, juntarse alrededor de una pista interrumpiría las acciones canalizadas.
-	node.collision_layer = 2
-	node.collision_mask = 1
-
-	var shape := CircleShape2D.new()
-	shape.radius = 14
-	var col := CollisionShape2D.new()
-	col.shape = shape
-	node.add_child(col)
-
-	var body := Polygon2D.new()
-	var pts := PackedVector2Array()
-	for i in 16:
-		pts.append(Vector2.from_angle(TAU * i / 16.0) * 14)
-	body.polygon = pts
-	body.color = Color.from_hsv(float(hash(p["id"]) % 360) / 360.0, 0.55, 0.95)
-	node.add_child(body)
-
-	var label := Label.new()
-	label.text = p.get("name", "?")
-	label.position = Vector2(-40, -36)
-	label.size = Vector2(80, 20)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# Contorno para que el nombre se lea bajo la luz nocturna (NightLighting).
-	label.add_theme_constant_override("outline_size", 4)
-	node.add_child(label)
+	# La escena ya usa la capa 2 con máscara 1: los jugadores no chocan entre sí (solo con
+	# el mapa), porque si se empujaran, juntarse en una pista interrumpiría las canalizaciones.
 
 	if node.is_local:
 		var detector := InteractionDetector.new()
@@ -73,7 +54,9 @@ func _spawn(p: Dictionary) -> Player:
 		area.shape = circle
 		detector.add_child(area)
 		node.add_child(detector)
-		node.add_child(Camera2D.new())
+		var camera := Camera2D.new()
+		camera.position = Vector2(0, -24)   # el origen está en los pies: centra el cuerpo
+		node.add_child(camera)
 
 	add_child(node)
 	_players[p["id"]] = node

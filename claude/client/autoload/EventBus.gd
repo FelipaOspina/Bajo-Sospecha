@@ -26,3 +26,8 @@ signal channel_finished(by: String, ok: bool, reason: String)
 
 signal intent_rejected(seq: int, reason: String)
 signal game_over(resolution: Dictionary)
+
+## Mensaje del chat de la sala (lobby).
+signal chat_received(by: String, author: String, text: String, at_ms: int)
+## Alguien usó la activa de su animal (las secretas solo te llegan si eres tú).
+signal ability_used(by: String, ability_id: String, ends_at_ms: int, marks: Array, affected: Array)

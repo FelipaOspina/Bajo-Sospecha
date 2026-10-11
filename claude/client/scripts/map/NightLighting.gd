@@ -12,6 +12,10 @@ extends Node2D
 @export var evidence_root: Node                     # Map/Evidence
 @export var local_light_scale := 3.2                # radio de la linterna del jugador local
 @export var player_light_scale := 1.6
+## Energía de las luces de jugadores. Se suman donde se solapan: si pasan de 1 los
+## cuerpos se queman a blanco (y con hdr_2d + glow, brillan).
+@export var local_light_energy := 0.6
+@export var player_light_energy := 0.3
 @export var evidence_light_scale := 1.1
 @export var evidence_light_color := Color("#E5A93C")  # UiPalette.AMBER: las pistas brillan en ámbar
 ## Suelo de oficina bajo el mapa (el color de fondo no lo oscurece el CanvasModulate,
@@ -21,6 +25,7 @@ extends Node2D
 @export var floor_tile := 64.0
 
 var modulate_node: CanvasModulate
+var _local_light: PointLight2D
 static var _light_texture: GradientTexture2D
 
 func _ready() -> void:
@@ -36,6 +41,8 @@ func _ready() -> void:
 		for child in root.get_children():
 			_light_up(child)
 		root.child_entered_tree.connect(_light_up)
+	# Visión nocturna (búho): la linterna del jugador local alumbra más lejos.
+	Abilities.ability_changed.connect(func(_skin: String, _kit: Dictionary) -> void: _scale_local_light())
 
 ## Moqueta de oficina: losetas con una junta tenue para que las luces se noten.
 func _draw() -> void:
@@ -74,10 +81,18 @@ func _light_up(node: Node) -> void:
 	light.texture = light_texture()
 	if node is Player:
 		light.texture_scale = local_light_scale if node.is_local else player_light_scale
-		light.energy = 0.8 if node.is_local else 0.6
+		light.energy = local_light_energy if node.is_local else player_light_energy
 		light.color = Color("#DCE6FF")
+		if node.is_local:
+			_local_light = light
 	else:
 		light.texture_scale = evidence_light_scale
 		light.energy = 0.9
 		light.color = evidence_light_color
 	node.add_child(light)
+	if light == _local_light:
+		_scale_local_light()
+
+func _scale_local_light() -> void:
+	if is_instance_valid(_local_light):
+		_local_light.texture_scale = local_light_scale * Abilities.flashlight_multiplier()

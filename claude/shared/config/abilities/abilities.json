@@ -1,0 +1,54 @@
+{
+  "_doc": "Habilidades tácticas por animal. Todos los animales son gratis para todos: la habilidad nunca se compra. Cada animal tiene una pasiva (siempre activa) y una activa (con enfriamiento, solo en la fase de investigación). El servidor valida y aplica los efectos; el cliente solo los muestra. Ninguna habilidad revela roles: actúan sobre movimiento, barras de acción, inventario y pruebas que el jugador ya podría ver. Efectos (multiplicadores salvo que se diga): speed (velocidad), interactRange (alcance para recoger), inventory (+huecos), channelSpeed (duración de borrar/copiar; <1 = más rápido), watchRadius (a qué distancia ves las barras de acción de otros), stealthRadius (a qué distancia ven los demás tus barras; 0 = nadie), moveTolerance (px que puedes moverte sin cortar tu acción), interruptImmune (el rugido no te corta), flashlight (radio de tu linterna, solo visual), colony ({radius, channelSpeed}: si hay alguien a tu lado al empezar), disguise (texto que ven los demás en tu barra). En la activa: cooldown y duration en segundos; area 'nearby' aplica effects también a quien esté a radius px; instant 'scent' marca escondites con pruebas que puedes ver; instant 'roar' corta las acciones de quien esté a radius px; secret = solo lo sabe quien la usa.",
+  "version": 1,
+  "abilities": {
+    "buho": {
+      "passive": { "id": "vision_nocturna", "name": "Visión nocturna", "description": "Tu linterna alumbra un 35 % más lejos.", "trait": "Los búhos ven con cien veces menos luz que nosotros.", "effects": { "flashlight": 1.35 } },
+      "active": { "id": "vuelo_silencioso", "name": "Vuelo silencioso", "description": "6 s: nadie ve tus barras de acción y vas un 15 % más rápido.", "trait": "Sus plumas con flecos amortiguan el ruido del vuelo.", "icon": "wing", "cooldown": 45, "duration": 6, "secret": true, "effects": { "stealthRadius": 0, "speed": 1.15 } }
+    },
+    "zorro": {
+      "passive": { "id": "astucia", "name": "Astucia", "description": "Tus barras de acción solo se ven desde un 30 % más cerca.", "trait": "El zorro caza a escondidas y sin hacer ruido.", "effects": { "stealthRadius": 0.7 } },
+      "active": { "id": "engano", "name": "Engaño", "description": "12 s: los demás ven tus acciones como «Revisando papeles…».", "trait": "Famoso por despistar a sus perseguidores.", "icon": "mask", "cooldown": 50, "duration": 12, "secret": true, "effects": { "disguise": "Revisando papeles…" } }
+    },
+    "lobo": {
+      "passive": { "id": "resistencia", "name": "Resistencia", "description": "Te mueves un 6 % más rápido.", "trait": "Los lobos recorren decenas de kilómetros al día.", "effects": { "speed": 1.06 } },
+      "active": { "id": "aullido_manada", "name": "Aullido de manada", "description": "5 s: tú y quien esté a menos de 200 px vais un 20 % más rápido.", "trait": "El aullido reúne a la manada.", "icon": "howl", "cooldown": 50, "duration": 5, "area": "nearby", "radius": 200, "effects": { "speed": 1.2 } }
+    },
+    "gato": {
+      "passive": { "id": "curiosidad", "name": "Curiosidad", "description": "Alcanzas los objetos desde un 15 % más lejos.", "trait": "Un gato lo toca todo con la pata.", "effects": { "interactRange": 1.15 } },
+      "active": { "id": "ojos_de_gato", "name": "Ojos de gato", "description": "8 s: ves las barras de acción de los demás al doble de distancia.", "trait": "Sus pupilas se abren para captar cualquier movimiento.", "icon": "eye", "cooldown": 40, "duration": 8, "secret": true, "effects": { "watchRadius": 2.0 } }
+    },
+    "perro": {
+      "passive": { "id": "trote", "name": "Trote", "description": "Te mueves un 5 % más rápido.", "trait": "Trotar es su paso natural: rápido y sin cansarse.", "effects": { "speed": 1.05 } },
+      "active": { "id": "olfato", "name": "Olfato", "description": "Marca 6 s los escondites a menos de 320 px con pruebas que puedes ver.", "trait": "Su olfato es decenas de miles de veces más fino que el nuestro.", "icon": "nose", "cooldown": 40, "duration": 6, "instant": "scent", "radius": 320, "secret": true }
+    },
+    "oso": {
+      "passive": { "id": "fuerza", "name": "Fuerza", "description": "Un hueco más en el inventario.", "trait": "Un oso levanta el triple de su peso.", "effects": { "inventory": 1 } },
+      "active": { "id": "embestida", "name": "Embestida", "description": "2,5 s: vas un 50 % más rápido.", "trait": "Pese a su tamaño, corre a más de 50 km/h.", "icon": "dash", "cooldown": 35, "duration": 2.5, "effects": { "speed": 1.5 } }
+    },
+    "panda": {
+      "passive": { "id": "calma", "name": "Calma", "description": "Tus acciones aguantan pequeños movimientos y el rugido no las corta.", "trait": "Pasa el día comiendo bambú sin que nada lo altere.", "effects": { "moveTolerance": 24, "interruptImmune": true } },
+      "active": { "id": "concentracion", "name": "Concentración", "description": "10 s: borras y copias un 35 % más rápido.", "trait": "Puede pasar horas concentrado en una sola caña.", "icon": "focus", "cooldown": 55, "duration": 10, "effects": { "channelSpeed": 0.65 } }
+    },
+    "leon": {
+      "passive": { "id": "vista_cazador", "name": "Vista de cazador", "description": "Ves las barras de acción de los demás un 20 % más lejos.", "trait": "Vigila la sabana desde lejos.", "effects": { "watchRadius": 1.2 } },
+      "active": { "id": "rugido", "name": "Rugido", "description": "Corta las acciones (borrar, copiar) de quien esté a menos de 220 px.", "trait": "Su rugido se oye a 8 km.", "icon": "roar", "cooldown": 60, "instant": "roar", "radius": 220 }
+    },
+    "tigre": {
+      "passive": { "id": "camuflaje", "name": "Camuflaje rayado", "description": "Tus barras de acción solo se ven desde un 20 % más cerca.", "trait": "Sus rayas lo esconden entre la maleza.", "effects": { "stealthRadius": 0.8 } },
+      "active": { "id": "emboscada", "name": "Emboscada", "description": "2,5 s: vas un 60 % más rápido.", "trait": "Caza acercándose en silencio y atacando de golpe.", "icon": "dash", "cooldown": 30, "duration": 2.5, "effects": { "speed": 1.6 } }
+    },
+    "conejo": {
+      "passive": { "id": "orejas_largas", "name": "Orejas largas", "description": "Ves las barras de acción de los demás un 40 % más lejos.", "trait": "Sus orejas giran para oír a un depredador a lo lejos.", "effects": { "watchRadius": 1.4 } },
+      "active": { "id": "salto", "name": "Salto", "description": "1,2 s: vas un 90 % más rápido.", "trait": "Arranca a toda velocidad de un salto.", "icon": "dash", "cooldown": 18, "duration": 1.2, "effects": { "speed": 1.9 } }
+    },
+    "mapache": {
+      "passive": { "id": "manos_habiles", "name": "Manos hábiles", "description": "Borras y copias un 15 % más rápido.", "trait": "Sus dedos abren cierres y tapas como manos humanas.", "effects": { "channelSpeed": 0.85 } },
+      "active": { "id": "antifaz", "name": "Antifaz", "description": "8 s: nadie ve tus barras de acción.", "trait": "El ladronzuelo nocturno del barrio.", "icon": "mask", "cooldown": 50, "duration": 8, "secret": true, "effects": { "stealthRadius": 0 } }
+    },
+    "pinguino": {
+      "passive": { "id": "colonia", "name": "Colonia", "description": "Si hay alguien a tu lado (120 px) al empezar, tu acción va un 20 % más rápida.", "trait": "Los pingüinos se apiñan y se turnan para resistir el frío.", "effects": { "colony": { "radius": 120, "channelSpeed": 0.8 } } },
+      "active": { "id": "tobogan", "name": "Tobogán", "description": "2 s: te deslizas un 70 % más rápido.", "trait": "Se tumban sobre la barriga y se deslizan por el hielo.", "icon": "dash", "cooldown": 25, "duration": 2, "effects": { "speed": 1.7 } }
+    }
+  }
+}

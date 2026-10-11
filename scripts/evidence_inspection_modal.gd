@@ -24,8 +24,8 @@ signal modal_closed
 # Acciones y canalización
 @onready var action_progress_bar: ProgressBar = $BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/ProgressBar
 @onready var status_label: Label = $BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/StatusLabel
-@onready var btn_backup: Button = $BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/HBoxContainer/BtnBackup
-@onready var btn_delete: Button = $BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/HBoxContainer/BtnDelete
+@onready var btn_backup: Button = $BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/BtnBackup
+@onready var btn_delete: Button = $BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/BtnDelete
 @onready var btn_close: Button = $BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/HeaderBar/BtnClose
 
 var current_clue: Dictionary = {}

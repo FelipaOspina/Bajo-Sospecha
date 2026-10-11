@@ -17,12 +17,16 @@ func _ready() -> void:
 ## (sin esperar a que el personaje llegue a moverse) y avisa al servidor.
 func _unhandled_input(event: InputEvent) -> void:
 	var bar := local_bar()
-	if bar == null or bar.finished:
-		return
+	if bar == null or bar.finished or local_move_tolerance() > 0.0:
+		return   # con Calma (panda) se puede mover un poco: lo vigila la barra por distancia
 	for action in Player.MOVE_ACTIONS:
 		if event.is_action_pressed(action):
 			bar.cancel_channeling("moved")   # → interrupted → _on_local_interrupted → servidor
 			return
+
+## Píxeles que tu animal puede moverse sin cortar su acción (pasiva Calma del panda).
+func local_move_tolerance() -> float:
+	return float(AnimalAbilities.passive_effect(Abilities.skin_id, "moveTolerance", 0.0))
 
 func local_bar() -> FloatingProgressBar:
 	return bar_for(GameState.local_player_id())
@@ -45,10 +49,11 @@ func _sync(s: Dictionary) -> void:
 		if node == null:
 			continue
 		var elapsed := maxf(0.0, (Network.server_time_ms() - float(c["startedAt"])) / 1000.0)
-		var bar := FloatingProgressBar.attach(node, c["label"], float(c["durationMs"]) / 1000.0, elapsed, str(c.get("kind", "backup")))
+		var bar := node.attach_progress_bar(c["label"], float(c["durationMs"]) / 1000.0, elapsed, str(c.get("kind", "backup")))
 		bar.auto_complete = false
 		bar.watch_movement = node.is_local
 		if node.is_local:
+			bar.move_tolerance = maxf(bar.move_tolerance, local_move_tolerance() - 2.0)
 			bar.interrupted.connect(_on_local_interrupted)
 		_bars[p["id"]] = {"bar": bar, "startedAt": c["startedAt"]}
 	# Canalizaciones que ya no vemos (se alejó, o el servidor la cerró sin evento para nosotros).

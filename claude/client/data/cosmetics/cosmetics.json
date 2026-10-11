@@ -1,0 +1,27 @@
+{
+  "_doc": "Cosméticos del avatar: lo único que se compra (con monedas del juego) o se gana en el Executive Pass. No cambian nada del juego: ni velocidad, ni habilidades, ni roles. Los 12 animales y sus habilidades son gratis para todos. Cada objeto ocupa un hueco (slot) y cambia un parámetro del chibi: outfit = ropa (style suit/hoodie y color), hat = gorra (color), shoes = zapatillas (color), bag = mochila (color). Sin nada puesto, el animal lleva su ropa de serie. La corbata no es un cosmético: en tu pantalla lleva el color de tu rol.",
+  "slots": { "outfit": "Ropa", "hat": "Gorra", "shoes": "Zapatillas", "bag": "Mochila" },
+  "items": [
+    { "id": "traje_carbon", "slot": "outfit", "name": "Traje carbón", "style": "suit", "color": "#2B2F3A" },
+    { "id": "traje_marino", "slot": "outfit", "name": "Traje marino", "style": "suit", "color": "#1E3A8A" },
+    { "id": "traje_burdeos", "slot": "outfit", "name": "Traje burdeos", "style": "suit", "color": "#6B1E3A" },
+    { "id": "traje_crema", "slot": "outfit", "name": "Traje crema", "style": "suit", "color": "#B9A27A" },
+    { "id": "traje_dorado", "slot": "outfit", "name": "Traje de gala dorado", "style": "suit", "color": "#9A7212", "rarity": "epic" },
+    { "id": "sudadera_gris", "slot": "outfit", "name": "Sudadera gris", "style": "hoodie", "color": "#4B5563" },
+    { "id": "sudadera_bosque", "slot": "outfit", "name": "Sudadera bosque", "style": "hoodie", "color": "#166534" },
+    { "id": "sudadera_noche", "slot": "outfit", "name": "Sudadera Turno de Noche", "style": "hoodie", "color": "#312E81", "rarity": "rare" },
+    { "id": "gorra_azul", "slot": "hat", "name": "Gorra azul", "color": "#1E3A8A" },
+    { "id": "gorra_roja", "slot": "hat", "name": "Gorra roja", "color": "#B91C1C" },
+    { "id": "gorra_negra", "slot": "hat", "name": "Gorra negra", "color": "#111827" },
+    { "id": "gorra_neon", "slot": "hat", "name": "Gorra neón", "color": "#0891B2", "rarity": "rare" },
+    { "id": "zapas_blancas", "slot": "shoes", "name": "Zapatillas blancas", "color": "#F1F5F9" },
+    { "id": "zapas_rojas", "slot": "shoes", "name": "Zapatillas rojas", "color": "#EF4444" },
+    { "id": "zapas_moradas", "slot": "shoes", "name": "Zapatillas moradas", "color": "#8B5CF6" },
+    { "id": "zapas_neon", "slot": "shoes", "name": "Zapatillas neón", "color": "#22D3EE", "rarity": "rare" },
+    { "id": "zapas_oro", "slot": "shoes", "name": "Zapatillas de oro", "color": "#F5B800", "rarity": "epic" },
+    { "id": "mochila_negra", "slot": "bag", "name": "Mochila negra", "color": "#1F2937" },
+    { "id": "mochila_naranja", "slot": "bag", "name": "Mochila naranja", "color": "#EA580C" },
+    { "id": "mochila_militar", "slot": "bag", "name": "Mochila militar", "color": "#4D5B3A" },
+    { "id": "mochila_plata", "slot": "bag", "name": "Mochila plateada", "color": "#9CA3AF", "rarity": "rare" }
+  ]
+}

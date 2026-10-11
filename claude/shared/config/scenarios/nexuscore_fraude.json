@@ -1,0 +1,476 @@
+{
+  "format_version": 1,
+  "scenario_id": "nexuscore_fraude",
+  "title": "Fraude y Chantaje en la Startup Tecnológica",
+  "description": "NexusCore AI, piso 14. Noche de auditoría antes de la Serie B: alguien drenó 1,8M de dólares hacia una billetera fría anónima.",
+  "player_count": {
+    "min": 4,
+    "max": 6
+  },
+  "phase_durations": {
+    "investigation": 180,
+    "discussion": 120,
+    "voting": 45
+  },
+  "trial": {
+    "max_presented_per_player": 2,
+    "allow_player_accusation": false,
+    "options": [
+      {
+        "id": "despedir_ceo",
+        "label": "Despedir y denunciar al CEO",
+        "accuses_role": "ROLE_CEO"
+      },
+      {
+        "id": "despedir_cto",
+        "label": "Despedir y denunciar al CTO",
+        "accuses_role": "ROLE_CTO"
+      },
+      {
+        "id": "despedir_filtrador",
+        "label": "Despedir y denunciar al Lead Dev",
+        "accuses_role": "ROLE_LEAKER"
+      }
+    ],
+    "public_tally": true
+  },
+  "endings": [
+    {
+      "id": "ceo_gana",
+      "title": "El CEO se sale con la suya",
+      "description": "El CTO es despedido, o los logs y el contrato desaparecen.",
+      "when": {
+        "any": [
+          {
+            "verdict": "despedir_cto"
+          },
+          {
+            "destroyed_all": [
+              "CLUE_SERVER_LOGS",
+              "CLUE_TORN_CONTRACT"
+            ]
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_CEO"
+        ]
+      }
+    },
+    {
+      "id": "cto_gana",
+      "title": "El CTO limpia su nombre",
+      "description": "Los logs y la laptop se exponen en la mesa y el CEO es despedido.",
+      "when": {
+        "all": [
+          {
+            "verdict": "despedir_ceo"
+          },
+          {
+            "revealed_all": [
+              "CLUE_SERVER_LOGS",
+              "CLUE_UNLOCKED_LAPTOP"
+            ]
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_CTO"
+        ]
+      }
+    },
+    {
+      "id": "inversor_gana",
+      "title": "El Inversor rescata su capital",
+      "description": "Despide al CEO y conserva el Pendrive con las llaves.",
+      "when": {
+        "all": [
+          {
+            "verdict": "despedir_ceo"
+          },
+          {
+            "held_by_role": {
+              "role": "ROLE_INVESTOR",
+              "evidence": "CLUE_ENCRYPTED_PENDRIVE"
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_INVESTOR"
+        ]
+      }
+    },
+    {
+      "id": "filtrador_gana",
+      "title": "El Filtrador escapa con el botín",
+      "description": "Aproximación: termina con el Pendrive y sin ser despedido (la negociación no se modela todavía).",
+      "when": {
+        "all": [
+          {
+            "held_by_role": {
+              "role": "ROLE_LEAKER",
+              "evidence": "CLUE_ENCRYPTED_PENDRIVE"
+            }
+          },
+          {
+            "not": {
+              "accused_role": "ROLE_LEAKER"
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_LEAKER"
+        ]
+      }
+    },
+    {
+      "id": "empleados",
+      "title": "La plantilla sobrevive",
+      "description": "El responsable del desfalco es despedido.",
+      "when": {
+        "verdict": "despedir_ceo"
+      },
+      "winners": {
+        "roles": [
+          "ROLE_EMPLOYEE"
+        ]
+      }
+    }
+  ],
+  "roles": [
+    {
+      "id": "ROLE_CEO",
+      "name": "El CEO (Fundador y Malversador)",
+      "description": "Desviaste los 1,8M para pagar deudas y usaste las credenciales SSH del CTO para incriminarle.",
+      "team": "culpables",
+      "count": {
+        "min": 1,
+        "max": 1
+      },
+      "visibility": {
+        "default": "full",
+        "rules": []
+      },
+      "secret_objectives": [
+        "Borrar o corromper los logs de auditoría de la Sala de Servidores antes de la última asamblea.",
+        {
+          "id": "contrato",
+          "description": "Destruir o esconder el borrador del contrato fantasma.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_TORN_CONTRACT"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        },
+        "Lograr que el Inversor culpe y destituya al CTO en la votación final."
+      ]
+    },
+    {
+      "id": "ROLE_CTO",
+      "name": "El CTO (Sospechoso Injusto)",
+      "description": "Alguien ejecutó el desvío con tu clave SSH a las 02:00 mientras estabas desconectado.",
+      "team": "inocentes",
+      "count": {
+        "min": 1,
+        "max": 1
+      },
+      "secret_objectives": [
+        "Extraer una copia forense no alterada de los logs de acceso del servidor.",
+        "Demostrar que la IP de origen pertenecía al despacho del CEO.",
+        "Evitar ser votado como culpable por el Inversor."
+      ]
+    },
+    {
+      "id": "ROLE_INVESTOR",
+      "name": "El Inversor Principal",
+      "description": "Tienes la auditoría bancaria con la hora y el monto exactos, pero no sabes quién tiene la clave privada.",
+      "team": "inocentes",
+      "count": {
+        "min": 1,
+        "max": 1
+      },
+      "secret_objectives": [
+        {
+          "id": "ladron",
+          "description": "Identificar al verdadero ladrón antes de firmar el cheque.",
+          "type": "accuse_culprit"
+        },
+        {
+          "id": "pendrive",
+          "description": "Recuperar el Pendrive con las llaves de la billetera fría.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_ENCRYPTED_PENDRIVE"
+            ],
+            "count": 1
+          }
+        },
+        "Descartar testimonios falsos y no acusar al inocente."
+      ]
+    },
+    {
+      "id": "ROLE_LEAKER",
+      "name": "El Empleado Filtrador (Lead Dev)",
+      "description": "Viste al CEO entrar de madrugada a la Sala de Servidores y guardas copias de los chats de Slack.",
+      "team": "mercenario",
+      "count": {
+        "min": 1,
+        "max": 1
+      },
+      "secret_objectives": [
+        {
+          "id": "botin",
+          "description": "Obtener el Pendrive antes que los demás.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_ENCRYPTED_PENDRIVE"
+            ],
+            "count": 1
+          }
+        },
+        "Negociar con el Inversor una recompensa o chantajear al CEO a cambio de callar.",
+        "Garantizar tu supervivencia laboral o escapar impune con el botín."
+      ]
+    },
+    {
+      "id": "ROLE_EMPLOYEE",
+      "name": "Empleado de NexusCore",
+      "description": "Rol de relleno para partidas de 5 y 6 jugadores (añadido: el caso original solo tenía 4 roles).",
+      "team": "inocentes",
+      "count": {
+        "min": 0,
+        "max": 2
+      },
+      "weight": 1,
+      "secret_objectives": [
+        {
+          "id": "votar_bien",
+          "description": "Ayudar a señalar al responsable del desfalco.",
+          "type": "accuse_culprit"
+        }
+      ]
+    }
+  ],
+  "evidence_spawns": [
+    {
+      "id": "CLUE_SERVER_LOGS",
+      "name": "Logs de Auditoría en Servidor Central",
+      "description": "Registro en crudo de conexiones SSH: la transferencia salió de la MAC fija del despacho de Presidencia, aunque usó el usuario del CTO.",
+      "type": "text",
+      "medium": "digital/critica",
+      "position": {
+        "x": 200,
+        "y": 150
+      },
+      "room": "Sala de Servidores",
+      "pocketable": false,
+      "weight": 3,
+      "tags": [
+        "digital",
+        "critica"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "requires": {
+        "view": {
+          "roles": [
+            "ROLE_CEO",
+            "ROLE_CTO",
+            "ROLE_LEAKER"
+          ]
+        }
+      },
+      "content": {
+        "text": "02:03:17 sshd[2211]: Accepted publickey for cto from 10.14.0.7 (MAC 3c:22:fb:9a:01:ce, Presidencia)"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Purgar partición /var/log/audit.log",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 10
+        },
+        {
+          "kind": "backup",
+          "label": "Descargar dump forense a dispositivo móvil",
+          "roles": [
+            "ROLE_CTO",
+            "ROLE_LEAKER"
+          ],
+          "seconds": 6
+        }
+      ]
+    },
+    {
+      "id": "CLUE_UNLOCKED_LAPTOP",
+      "name": "Laptop Desbloqueada de Dirección",
+      "description": "Sesión abierta en un explorador blockchain con la transacción de 1,8M USDT hacia una billetera no declarada.",
+      "type": "photo",
+      "medium": "digital/visual",
+      "position": [
+        640,
+        120
+      ],
+      "room": "Despacho del CEO",
+      "pocketable": false,
+      "weight": 2,
+      "tags": [
+        "digital",
+        "visual"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_INVESTOR",
+        "ROLE_LEAKER"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "image": "res://assets/evidence/laptop_blockchain.png"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Cerrar sesión forzada y borrar caché de navegador",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 4
+        },
+        {
+          "kind": "backup",
+          "label": "Tomar fotografía con smartphone de la pantalla",
+          "roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR",
+            "ROLE_LEAKER"
+          ],
+          "seconds": 3
+        }
+      ]
+    },
+    {
+      "id": "CLUE_TORN_CONTRACT",
+      "name": "Borrador de Contrato Roto en el Basurero",
+      "description": "Contrato de consultoría ficticia con 'Apex Growth LLC' (Delaware), firmado a mano por el CEO.",
+      "type": "item",
+      "medium": "documento/fisica",
+      "position": {
+        "x": 200,
+        "y": 550
+      },
+      "room": "Cuarto de Archivo y Basura",
+      "weight": 2,
+      "tags": [
+        "documento",
+        "fisica"
+      ],
+      "benefits": [
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Pasar por la trituradora de papel industrial",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 5
+        }
+      ]
+    },
+    {
+      "id": "CLUE_SLACK_MESSAGE",
+      "name": "Mensaje Incriminatorio en Pantalla Olvidada",
+      "description": "Chat privado fijado: 'Asegúrate de culpar al pipeline de despliegue del CTO si los auditores preguntan mañana por el balance'.",
+      "type": "text",
+      "medium": "digital/testimonial",
+      "position": {
+        "x": 640,
+        "y": 400
+      },
+      "room": "Open Space",
+      "pocketable": false,
+      "weight": 1,
+      "tags": [
+        "digital",
+        "testimonial"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_LEAKER"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "Asegúrate de culpar al pipeline de despliegue del CTO si los auditores preguntan mañana por el balance."
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Bloquear estación de trabajo remotamente",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 3
+        },
+        {
+          "kind": "backup",
+          "label": "Captura de pantalla enviada al inventario",
+          "roles": [
+            "ROLE_LEAKER",
+            "ROLE_CTO",
+            "ROLE_INVESTOR"
+          ],
+          "seconds": 2
+        }
+      ]
+    },
+    {
+      "id": "CLUE_ENCRYPTED_PENDRIVE",
+      "name": "Pendrive USB Oculto tras la Cafetera",
+      "description": "Memoria USB de titanio con la etiqueta 'Recovery Seed Vault': contiene las llaves privadas del dinero malversado.",
+      "type": "item",
+      "medium": "fisica/criptografica",
+      "position": {
+        "x": 1050,
+        "y": 550
+      },
+      "room": "Cafetería",
+      "weight": 3,
+      "tags": [
+        "fisica",
+        "criptografica"
+      ],
+      "benefits": [
+        "ROLE_INVESTOR",
+        "ROLE_LEAKER"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ]
+    }
+  ]
+}

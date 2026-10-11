@@ -20,6 +20,14 @@ func _ready() -> void:
 	GameState.snapshot_applied.connect(_on_snapshot)
 	EventBus.ui_modal_changed.connect(func(open: bool): _input_locked = open)
 
+## Conectado o no (semitransparente si se cayó). PlayerAvatar también atenúa el nombre.
+func set_connected(on: bool) -> void:
+	modulate.a = 1.0 if on else 0.35
+
+## Barra de canalización sobre el personaje. PlayerAvatar la coloca encima del nombre.
+func attach_progress_bar(text: String, duration_s: float, already_elapsed := 0.0, kind := "backup") -> FloatingProgressBar:
+	return FloatingProgressBar.attach(self, text, duration_s, already_elapsed, kind)
+
 ## Coloca al personaje sin interpolar (al aparecer o al reconectar).
 func teleport(pos: Vector2) -> void:
 	position = pos
@@ -28,7 +36,7 @@ func teleport(pos: Vector2) -> void:
 func _physics_process(delta: float) -> void:
 	if is_local:
 		var dir := Vector2.ZERO if _input_locked else Input.get_vector(MOVE_ACTIONS[0], MOVE_ACTIONS[1], MOVE_ACTIONS[2], MOVE_ACTIONS[3])
-		velocity = dir * speed
+		velocity = dir * speed * Abilities.speed_multiplier()   # pasiva y acelerones del animal (los valida el servidor)
 		move_and_slide()
 		_send_timer += delta
 		if _send_timer >= SEND_INTERVAL:

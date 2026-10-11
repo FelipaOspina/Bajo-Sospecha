@@ -38,7 +38,7 @@ juego-de-roles/
 │   │   │       └── rules/                   # IEvidenceRule: alcance, fase, capacidad...
 │   │   ├── net/                    # Room, RoomDirectory (salas por código), StateProjector, DeltaEncoder, WsServer
 │   │   └── index.ts                # Composition root
-│   └── test/                       # node:test (25 tests)
+│   └── test/                       # node:test (27 tests)
 ├── client/                         # Proyecto Godot 4
 │   ├── autoload/                   # EventBus, Network, GameState
 │   ├── scripts/
@@ -55,7 +55,7 @@ juego-de-roles/
 │   │       └── trial/              # EvidenceCard (arrastrable), EvidenceDropZone (centro de la mesa)
 │   ├── scenes/main/Main.tscn       # Composition root del cliente
 │   ├── scenes/ui/                  # EvidenceInspectionModal, FloatingProgressBar, AssemblyBoardUI, ResolutionScreen
-│   ├── tests/                      # godot --headless res://tests/<ScenarioTest|EvidenceInspectionModalTest|FloatingProgressBarTest|TrialTest|NightLightingTest>.tscn
+│   ├── tests/                      # godot --headless res://tests/<ScenarioTest|EvidenceInspectionModalTest|FloatingProgressBarTest|TrialTest|NightLightingTest|PlayerAvatarTest|OfficeHUDTest|AbilitiesTest>.tscn
 │   └── data/                       # Copia de shared/config (tools/sync-config.sh)
 ├── docs/networking.md              # Esquema de sincronización
 └── tools/sync-config.sh
@@ -195,6 +195,22 @@ El Theme cubre botones, paneles (`Panel` y `PanelContainer` con el cristal oscur
 
 **Ambiente nocturno.** `Map/NightLighting` (`client/scripts/map/NightLighting.gd`) añade un `CanvasModulate` azul oscuro (`#2A3350`) y un suelo de moqueta, y pone una `PointLight2D` a cada jugador (linterna más amplia para el jugador local) y a cada pista (luz ámbar), también a los que aparecen después. Solo oscurece el mundo: el modal, la mesa de juntas y las barras flotantes están en sus propios CanvasLayers y se ven con su color real. Para ajustar la noche, cambia `night_color` y las escalas de luz en el inspector. Capturas: `docs/ui/mapa_nocturno.png` y `docs/ui/mapa_nocturno_modal.png`.
 
+**Avatar del jugador.** Cada jugador es un `PlayerAvatar` (`client/scenes/player/PlayerAvatar.tscn`, preparado para 2.4D). Es un CharacterBody2D con el origen y la colisión en los pies. Debajo tiene `Visuals` con Y-Sort, que contiene `DropShadow` y `BodySprite` (AnimatedSprite2D). El mapa ordena por Y a jugadores y pistas. El nombre va en una píldora oscura translúcida (`NameTag`) y la barra de canalización encima; los dos están en CanvasLayers propios, así que no giran con el cuerpo ni los oscurece la noche. Mira `docs/ui/hud_oficina.png`.
+
+**Skins de animales.** El catálogo está en `shared/config/skins/skins.json`, con 12 animales: león, lobo, tigre, zorro, gato, perro, oso, panda, conejo, mapache, búho y pingüino.
+- El servidor reparte una skin libre a cada jugador al entrar. En el lobby se puede cambiar con el intent `choose_skin` (`{"skinId": "panda"}`); se rechaza si otro la lleva.
+- La skin es pública y no depende del rol. `assign_by_role: true` haría que cada rol lleve su animal de `role_skins` (CEO león, CTO lobo, Inversor tigre, Filtrador zorro), pero eso delata el rol a todos, por eso viene en `false`.
+- Los PNG van en `client/assets/sprites/skins/<animal>/{frente,lado,espalda,caminando}.png`; el formato está en `client/assets/sprites/README.md`.
+- Mientras falte `frente.png`, el avatar dibuja el chibi procedural: `client/scripts/ProceduralChibiAvatar.gd`, con piezas Polygon2D y el shader `client/shaders/procedural_chibi_3d.gdshader` que da volumen de vinilo. `animate_walk(delta, velocidad)` aplica el rebote de juguete de cuerda (aplasta y estira, pasos alternos, brazos y orejas con muelle). Mira `docs/ui/chibi_catalogo.png` y `docs/ui/chibi_vistas.png`.
+- La corbata del chibi lleva el color de tu rol solo en tu personaje; al final de la partida, todas.
+- Los 12 animales son gratis para todos (`starter_skins` en `progression.json`). Cada uno trae su habilidad (ver *Habilidades por animal*).
+- **Cosméticos** (`shared/config/cosmetics/cosmetics.json`): ropa (traje o sudadera), gorra, zapatillas y mochila. Es lo único que se compra en la Tienda o se gana en el Executive Pass. Se equipan con `equip_cosmetic` y viajan en `look` dentro del estado público del jugador. Nunca tocan la corbata.
+- **Horneado** (`client/scripts/ChibiBaker.gd`): en móviles y web cada chibi se dibuja una vez en una hoja de 25 poses y se pinta como una textura (1 llamada de dibujo en vez de ~60). Se cambia en Configuración → Calidad de los avatares, o con `CHIBI_BAKE=1/0`.
+
+**HUD de oficina.** `client/scenes/ui/OfficeHUD.tscn` (en `Main/UI`) se ve solo en la exploración.
+- Arriba a la izquierda, el panel **Tareas** muestra tus objetivos secretos con un punto de estado: ámbar el activo, blanco los pendientes, gris los hechos. Solo los ves tú.
+- Arriba a la derecha, el **minimapa circular** (`CircularMinimap`) se centra en ti (flecha blanca). Muestra a los demás con el color de su animal y las pistas en las que ves algo.
+
 - **`FloatingProgressBar.tscn`** (`floating_progress_bar.gd`): `Node2D` → `CanvasLayer` (`follow_viewport_enabled`) → `BarAnchor` → `ActionLabel` + `ChannelingBar`. Sigue a la cámara (posición y zoom) sin heredar la escala ni el volteo del personaje. Roja (`#ff334b`) en acciones hostiles (borrar, triturar) y cian (`#00e5ff`) en respaldos. `FloatingProgressBar.attach(personaje, texto, segundos, ya_transcurrido, "delete"|"backup")`. Emite `completed` o `interrupted(motivo)`; con `watch_movement` se interrumpe si el personaje se mueve. En partida la gestiona `ChannelPresenter`: una barra por cada canalización que manda el servidor (las ven todos los cercanos); la del jugador local cancela al moverse y el resultado lo confirma el servidor (`server_finished`).
 - **`EvidenceInspectionModal.tscn`** (`evidence_inspection_modal.gd`): `BackgroundDimmer` → `ModalCard` (`DeviceBezelTexture` + panel) → `ModalHeader` / `ContentSlot` / `ActionFooter`. El tipo de pista (`medium` y etiquetas, reglas en `EvidenceFrames`) elige la vista que se inyecta en `ContentSlot`: `TerminalView` (Digital / Crítica), `SmartphoneView` (Digital / Visual, Testimonial), `PaperDocumentView` (Documental / Físico) o `ItemView`. Si existe `res://assets/ui/bezels/bezel_monitor.png` (o `bezel_smartphone.png`, `bezel_paper_clipboard.png`) se usa como bisel; si no, la vista lo dibuja con estilos. Con vista parcial se ve el dispositivo pero no el contenido ("Permiso denegado", "Pantalla bloqueada"). En el footer, `BackupEvidenceBtn` (cian) y `DeleteEvidenceBtn` (rojo) solo aparecen si **tu rol** tiene esa `backup_action` / `deletion_action`; al pulsar, el modal se cierra cuando el servidor acepta y la barra flotante toma el relevo. Para una vista nueva: heredar de `EvidenceFrame` y `EvidenceFrames.register("id", Script, ["palabras"])`.
 - **`AssemblyBoardUI.tscn`** (`assembly_board_ui.gd`, mesa de juntas): `TopBar` con `AssemblyTimerLabel` (ámbar, rojo en los últimos 30 s) y "ASAMBLEA EXTRAORDINARIA DEL DIRECTORIO"; `SeatingOrbitContainer` con un asiento por jugador en arco alrededor de la mesa (tú abajo a la izquierda); `EvidenceDropZone` en el centro, donde se sueltan las cartas y se ve la última prueba en su vista, con las demás en huecos `SlotEvidence_N` y `ExposeActionBtn`; `BottomDrawer` con tu mano (`HandCardsHBox`, clic = seleccionar, doble clic = abrir en el modal, arrastrar = exponer) y `VotingActionPanel` (`TargetVoteSelector`, `AccuseButton` "Confirmar Voto de Expulsión", `SkipVoteButton` "Abstenerse", recuento si el escenario tiene `public_tally`). Los asientos dicen quién ya votó y cuántas pruebas expuso, **no** su rol ni a quién votó; el `AccusationPinMarker` aparece al resolver, sobre quien resultó acusado.
@@ -206,6 +222,15 @@ El Theme cubre botones, paneles (`Panel` y `PanelContainer` con el cristal oscur
 - **Barra y movimiento**: al aceptar la acción, `ChannelPresenter` instancia la `FloatingProgressBar` sobre el personaje con su `channeling_time_seconds`. Si el jugador pulsa una tecla de movimiento (`Player.MOVE_ACTIONS`) antes de terminar, se llama a `cancel_channeling()` y se envía `channel_cancel` al servidor; además el servidor corta la acción si la posición cambia más de 6 px.
 - **Cambio de fase**: `PhaseViewController` escucha la fase del servidor. En debate y votación oculta y pausa el mapa (nadie se mueve), cierra el modal y abre `AssemblyBoardUI`; en investigación vuelve a la exploración; en resultados cierra la mesa.
 - **Exponer**: la mesa emite `evidence_presented(evidence_data, player_id)` al soltar una carta o pulsar "Colocar Prueba en la Mesa"; `Main.gd` la conecta a `TrialAssemblyManager.present`, que la envía al servidor. Cuando el servidor la pone en la mesa, `TrialAssemblyManager.evidence_presented` hace que todos la vean en el centro.
+
+## Habilidades por animal
+
+Cada animal tiene una pasiva y una activa (tecla Q o botón abajo a la derecha, solo en la investigación). Están en `shared/config/abilities/abilities.json`, con una copia en `client/data/abilities/`. La tabla completa y las reglas de diseño están en `ROADMAP_EXPANSION.md`.
+
+- **Servidor:** `server/src/domain/abilities/` (`AbilityCatalog` valida el JSON y `AbilitySystem` aplica usos, enfriamientos y efectos). `Room` atiende `use_ability`, y `StateProjector` decide quién ve cada barra de acción.
+- **Cliente:** `client/scripts/AnimalAbilities.gd` (autoload `Abilities`) tiene el diccionario y emite las señales del HUD. `AbilityButton` es el botón con la recarga y `ScentMarkers` dibuja los escondites del olfato.
+- **Roles:** ninguna habilidad revela roles. El animal se elige antes del reparto y las activas secretas solo las sabe quien las usa.
+- **Pruebas:** `server/test/abilities.test.ts` y `client/tests/AbilitiesTest.tscn`.
 
 ## Casos en formato libre
 

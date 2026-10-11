@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=16 format=3 uid="uid://cbjqtq08aemqn"]
 
 [ext_resource type="Script" path="res://scenes/main/Main.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/roles/RoleManager.gd" id="2"]
@@ -18,6 +18,10 @@
 
 [node name="Main" type="Node"]
 script = ExtResource("1")
+scenario_id = null
+role_set_id = null
+player_name = null
+room_code = null
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = ExtResource("15")
@@ -32,8 +36,18 @@ role_manager = NodePath("../../RoleManager")
 
 [node name="NightLighting" type="Node2D" parent="Map" node_paths=PackedStringArray("players_root", "evidence_root")]
 script = ExtResource("14")
+night_color = null
 players_root = NodePath("../Players")
 evidence_root = NodePath("../Evidence")
+local_light_scale = null
+player_light_scale = null
+local_light_energy = null
+player_light_energy = null
+evidence_light_scale = null
+evidence_light_color = null
+floor_rect = null
+floor_color = null
+floor_tile = null
 
 [node name="RoleManager" type="Node" parent="."]
 script = ExtResource("2")
@@ -70,6 +84,8 @@ assembly = NodePath("../../TrialAssemblyManager")
 evidence_modal = NodePath("../EvidenceInspectionModal")
 
 [node name="ResolutionScreen" parent="UI" node_paths=PackedStringArray("trial") instance=ExtResource("10")]
+grow_horizontal = 2
+grow_vertical = 2
 trial = NodePath("../../TrialSystem")
 
 [node name="EvidenceInspectionModal" parent="UI" node_paths=PackedStringArray("evidence_system", "inventory") instance=ExtResource("6")]

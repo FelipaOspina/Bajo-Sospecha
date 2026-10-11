@@ -1,0 +1,188 @@
+{
+  "_comentario": "Progresión y economía (mock, sin pagos reales). Monedas Corporativas (MC) y Créditos Nexus (CN) solo se ganan jugando y subiendo el Executive Pass. Los 12 animales y sus habilidades son gratis para todos (starter_skins): nada que afecte al juego se compra. Con las monedas solo se compran el Premium y cosméticos (ropa, gorras, zapatillas, mochilas; ver shared/config/cosmetics), que tampoco dependen del rol.",
+  "currencies": {
+    "coins": {
+      "name": "Monedas Corporativas",
+      "short": "MC"
+    },
+    "credits": {
+      "name": "Créditos Nexus",
+      "short": "CN"
+    }
+  },
+  "starting_coins": 500,
+  "starting_credits": 50,
+  "starter_skins": [
+    "zorro",
+    "gato",
+    "perro",
+    "conejo",
+    "oso",
+    "mapache",
+    "buho",
+    "tigre",
+    "lobo",
+    "pinguino",
+    "panda",
+    "leon"
+  ],
+  "starter_cosmetics": [
+    "traje_carbon",
+    "sudadera_gris",
+    "zapas_blancas",
+    "mochila_negra"
+  ],
+  "profile_xp_per_level": 1000,
+  "match_rewards": {
+    "xp_played": 120,
+    "xp_win": 180,
+    "xp_per_objective": 40,
+    "coins_played": 40,
+    "coins_win": 60
+  },
+  "battle_pass": {
+    "id": "executive_pass_s1",
+    "name": "Executive Pass",
+    "season": "Temporada 1 · Auditoría Nocturna",
+    "max_level": 50,
+    "xp_per_level": 400,
+    "premium_price": {
+      "coins": 950
+    },
+    "free_coins_per_level": 25,
+    "premium_coins_per_level": 60,
+    "credit_rewards": [
+      {
+        "level": 10,
+        "track": "free",
+        "amount": 20
+      },
+      {
+        "level": 20,
+        "track": "free",
+        "amount": 20
+      },
+      {
+        "level": 40,
+        "track": "free",
+        "amount": 20
+      },
+      {
+        "level": 5,
+        "track": "premium",
+        "amount": 40
+      },
+      {
+        "level": 15,
+        "track": "premium",
+        "amount": 40
+      },
+      {
+        "level": 25,
+        "track": "premium",
+        "amount": 40
+      },
+      {
+        "level": 30,
+        "track": "premium",
+        "amount": 40
+      },
+      {
+        "level": 40,
+        "track": "premium",
+        "amount": 40
+      }
+    ],
+    "cosmetic_rewards": [
+      {
+        "level": 5,
+        "track": "free",
+        "cosmetic": "mochila_naranja"
+      },
+      {
+        "level": 10,
+        "track": "premium",
+        "cosmetic": "traje_burdeos"
+      },
+      {
+        "level": 15,
+        "track": "free",
+        "cosmetic": "gorra_roja"
+      },
+      {
+        "level": 20,
+        "track": "premium",
+        "cosmetic": "sudadera_noche"
+      },
+      {
+        "level": 30,
+        "track": "free",
+        "cosmetic": "zapas_neon"
+      },
+      {
+        "level": 35,
+        "track": "premium",
+        "cosmetic": "gorra_neon"
+      },
+      {
+        "level": 45,
+        "track": "premium",
+        "cosmetic": "zapas_oro"
+      },
+      {
+        "level": 50,
+        "track": "premium",
+        "cosmetic": "traje_dorado"
+      }
+    ]
+  },
+  "shop": {
+    "cosmetics": {
+      "traje_marino": {
+        "coins": 600
+      },
+      "traje_crema": {
+        "coins": 700
+      },
+      "sudadera_bosque": {
+        "coins": 600
+      },
+      "gorra_azul": {
+        "coins": 400
+      },
+      "gorra_negra": {
+        "coins": 450
+      },
+      "zapas_rojas": {
+        "coins": 350
+      },
+      "zapas_moradas": {
+        "coins": 400
+      },
+      "mochila_militar": {
+        "coins": 450
+      },
+      "mochila_plata": {
+        "credits": 120
+      },
+      "traje_burdeos": {
+        "coins": 1400
+      },
+      "sudadera_noche": {
+        "credits": 200
+      },
+      "gorra_neon": {
+        "credits": 150
+      },
+      "zapas_neon": {
+        "coins": 1200
+      },
+      "traje_dorado": {
+        "credits": 400
+      },
+      "zapas_oro": {
+        "credits": 250
+      }
+    }
+  }
+}
