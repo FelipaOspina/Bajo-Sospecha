@@ -1,0 +1,150 @@
+[gd_scene load_steps=5 format=3 uid="uid://b1nv8w85m31pk"]
+
+[ext_resource type="Script" path="res://scripts/test_evidence_modal.gd" id="1_test_script"]
+[ext_resource type="Environment" path="res://resources/office_environment.tres" id="2_env"]
+[ext_resource type="PackedScene" path="res://scenes/evidence_inspection_modal.tscn" id="3_modal_scene"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.0862745, 0.121569, 0.188235, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.3, 0.45, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="TestEvidenceModalScene" type="Node2D"]
+script = ExtResource("1_test_script")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0.0431373, 0.0588235, 0.0980392, 1)
+
+[node name="ServerGlowSim" type="ColorRect" parent="Background"]
+offset_left = 72.0
+offset_top = 160.0
+offset_right = 120.0
+offset_bottom = 280.0
+color = Color(0.1, 0.15, 0.22, 1)
+
+[node name="ServerLedCyan" type="ColorRect" parent="Background/ServerGlowSim"]
+self_modulate = Color(0, 2.5, 2.8, 1)
+offset_left = 8.0
+offset_top = 12.0
+offset_right = 40.0
+offset_bottom = 20.0
+color = Color(0, 0.9, 1, 1)
+
+[node name="ServerLedAmber" type="ColorRect" parent="Background/ServerGlowSim"]
+self_modulate = Color(2.5, 1.8, 0.2, 1)
+offset_left = 8.0
+offset_top = 32.0
+offset_right = 40.0
+offset_bottom = 40.0
+color = Color(0.9, 0.6, 0.1, 1)
+
+[node name="ServerLedRed" type="ColorRect" parent="Background/ServerGlowSim"]
+self_modulate = Color(3.5, 0.3, 0.3, 1)
+offset_left = 8.0
+offset_top = 52.0
+offset_right = 40.0
+offset_bottom = 60.0
+color = Color(1, 0.1, 0.2, 1)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="TitleLabel" type="Label" parent="UI"]
+offset_left = 220.0
+offset_top = 28.0
+offset_right = 1060.0
+offset_bottom = 64.0
+theme_override_colors/font_color = Color(0.898039, 0.662745, 0.235294, 1)
+theme_override_font_sizes/font_size = 24
+text = "BAJO SOSPECHA: TEST DE INTERACCIÓN Y SHADER CRT"
+horizontal_alignment = 1
+
+[node name="RoleSelectorPanel" type="PanelContainer" parent="UI"]
+offset_left = 220.0
+offset_top = 80.0
+offset_right = 580.0
+offset_bottom = 160.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/RoleSelectorPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/RoleSelectorPanel/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/RoleSelectorPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = "PROBAR DESDE LA PERSPECTIVA DEL ROL:"
+
+[node name="RoleOption" type="OptionButton" parent="UI/RoleSelectorPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="CluesPanel" type="PanelContainer" parent="UI"]
+offset_left = 220.0
+offset_top = 180.0
+offset_right = 1060.0
+offset_bottom = 540.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/CluesPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/CluesPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="UI/CluesPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.898039, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "EVIDENCIAS DETECTADAS EN EL MAPA (Haz clic para inspeccionar):"
+
+[node name="CluesButtonsVBox" type="VBoxContainer" parent="UI/CluesPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusPanel" type="PanelContainer" parent="UI"]
+offset_left = 220.0
+offset_top = 560.0
+offset_right = 1060.0
+offset_bottom = 620.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/StatusPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="LogLabel" type="Label" parent="UI/StatusPanel/MarginContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Esperando acción..."
+horizontal_alignment = 1
+
+[node name="EvidenceInspectionModal" parent="." instance=ExtResource("3_modal_scene")]
+visible = false

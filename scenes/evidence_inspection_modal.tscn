@@ -1,0 +1,216 @@
+[gd_scene load_steps=7 format=3 uid="uid://c7mpy8142dxk1"]
+
+[ext_resource type="Script" path="res://scripts/evidence_inspection_modal.gd" id="1_modal_script"]
+[ext_resource type="Shader" path="res://shaders/crt_terminal_screen.gdshader" id="2_crt_shader"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_card"]
+bg_color = Color(0.0431373, 0.0588235, 0.0980392, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.898039, 0.662745, 0.235294, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_terminal"]
+bg_color = Color(0.0196078, 0.0352941, 0.0588235, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.898039, 1, 0.3)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("2_crt_shader")
+shader_parameter/curvature = 0.035
+shader_parameter/corner_softness = 0.05
+shader_parameter/scanline_density = 320.0
+shader_parameter/scanline_intensity = 0.18
+shader_parameter/scanline_speed = 0.4
+shader_parameter/aberration_amount = 0.0025
+shader_parameter/vignette_intensity = 0.55
+shader_parameter/vignette_opacity = 0.65
+shader_parameter/screen_brightness = 1.08
+shader_parameter/flicker_intensity = 0.012
+shader_parameter/phosphor_tint = Color(0, 0.95, 0.85, 1)
+shader_parameter/tint_mix = 0.08
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_document"]
+bg_color = Color(0.92, 0.88, 0.8, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.4, 0.3, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="EvidenceInspectionModal" type="CanvasLayer"]
+script = ExtResource("1_modal_script")
+
+[node name="BackgroundDimmer" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.04, 0.08, 0.75)
+
+[node name="CenterContainer" type="CenterContainer" parent="BackgroundDimmer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ModalCard" type="PanelContainer" parent="BackgroundDimmer/CenterContainer"]
+custom_minimum_size = Vector2(740, 500)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal_card")
+
+[node name="MarginContainer" type="MarginContainer" parent="BackgroundDimmer/CenterContainer/ModalCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderBar" type="HBoxContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/HeaderBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.898039, 0.662745, 0.235294, 1)
+theme_override_font_sizes/font_size = 20
+text = "Logs de Auditoría en Servidor Central"
+
+[node name="TypeTagLabel" type="Label" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/HeaderBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.898039, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "[ Digital / Crítica ]"
+
+[node name="RoomLabel" type="Label" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/HeaderBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "Ubicación: Sala de Servidores"
+
+[node name="BtnClose" type="Button" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/HeaderBar"]
+custom_minimum_size = Vector2(36, 32)
+layout_mode = 2
+text = "✕"
+
+[node name="HSeparator" type="HSeparator" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ContentArea" type="MarginContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TerminalView" type="PanelContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_terminal")
+
+[node name="MarginContainer" type="MarginContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/TerminalView"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="TerminalText" type="RichTextLabel" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/TerminalView/MarginContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=#00e5ff]>>> Cargando registro de auditoría...[/color]"
+
+[node name="CRTOverlay" type="ColorRect" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/TerminalView"]
+material = SubResource("ShaderMaterial_crt")
+layout_mode = 2
+mouse_filter = 2
+
+[node name="DocumentView" type="PanelContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea"]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_document")
+
+[node name="MarginContainer" type="MarginContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/DocumentView"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="DocumentText" type="RichTextLabel" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/DocumentView/MarginContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=#2c1810]Cargando documento...[/color]"
+
+[node name="GenericItemView" type="PanelContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea"]
+visible = false
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/GenericItemView"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/GenericItemView/MarginContainer"]
+layout_mode = 2
+
+[node name="ItemDescription" type="Label" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ContentArea/GenericItemView/MarginContainer/VBox"]
+layout_mode = 2
+text = "Objeto físico recolectable."
+autowrap_mode = 2
+
+[node name="ActionFooter" type="VBoxContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ProgressBar" type="ProgressBar" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+show_percentage = false
+
+[node name="StatusLabel" type="Label" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 13
+text = "Seleccione una acción para interactuar."
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnBackup" type="Button" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "💾 Descargar Copia Forense"
+
+[node name="BtnDelete" type="Button" parent="BackgroundDimmer/CenterContainer/ModalCard/MarginContainer/VBoxContainer/ActionFooter/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.3, 0.35, 1)
+text = "🔥 Purgar Logs"
