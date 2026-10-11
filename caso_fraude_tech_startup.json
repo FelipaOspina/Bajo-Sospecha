@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "case_id": "CASE-002-TECH-FRAUD",
+  "title": "Fraude y Chantaje en la Startup Tecnológica",
+  "category": "Corporate Drama & Social Deduction",
+  "difficulty": "Hard",
+  "player_count": {
+    "min": 4,
+    "max": 6
+  },
+  "setting": {
+    "company_name": "NexusCore AI",
+    "location_name": "Piso 14 - Oficinas Centrales de NexusCore",
+    "rooms": [
+      "Sala de Servidores",
+      "Despacho del CEO",
+      "Open Space (Área de Desarrolladores)",
+      "Sala de Juntas Ejecutiva",
+      "Cafetería / Zona de Descanso",
+      "Cuarto de Archivo y Basura de Reciclaje"
+    ],
+    "ambient_event": "Noche de auditoría previa al anuncio de la Ronda de Inversión Serie B ($15M)",
+    "crisis_summary": "Un agujero de 1.8 millones de dólares fue drenado de la cuenta corporativa hacia una billetera fría anónima durante el último sprint de desarrollo."
+  },
+  "roles": [
+    {
+      "role_id": "ROLE_CEO",
+      "display_name": "El CEO (Fundador y Malversador)",
+      "alignment": "Culpable / Encubridor",
+      "starting_knowledge": "Sabe que él desvió los 1.8M de dólares para pagar deudas de apuestas y malas inversiones cripto. Incriminó intencionalmente las credenciales SSH del CTO.",
+      "hidden_ability": {
+        "name": "Autoridad Corporativa",
+        "description": "Puede expulsar a cualquier jugador de una habitación privada durante 45 segundos bajo el pretexto de 'reunión confidencial'.",
+        "cooldown_seconds": 90
+      },
+      "individual_objectives": [
+        "Borrar o corromper los registros de auditoría (logs) en la Sala de Servidores antes de la última asamblea.",
+        "Destruir o esconder el borrador del contrato de asesoría fantasma.",
+        "Lograr que el Inversor culpe y destituya al CTO en la votación final."
+      ],
+      "win_condition": "Los logs son purgados O el CTO es sentenciado en el Juicio Ejecutivo con mayoría de votos."
+    },
+    {
+      "role_id": "ROLE_CTO",
+      "display_name": "El CTO (Sospechoso Injusto)",
+      "alignment": "Inocente / Investigador",
+      "starting_knowledge": "Descubrió una anomalía de red a las 02:00 AM ejecutada con su clave SSH, pero él estaba desconectado. Sabe que alguien le plantó una trampa técnica.",
+      "hidden_ability": {
+        "name": "Diagnóstico Root",
+        "description": "Inspecciona terminales y computadoras el doble de rápido (reduce el tiempo de minijuegos a la mitad).",
+        "cooldown_seconds": 0
+      },
+      "individual_objectives": [
+        "Extraer una copia forense no alterada de los logs de acceso en el Servidor.",
+        "Demostrar que la IP de origen del robo físico pertenecía al despacho del CEO.",
+        "Evitar ser votado como culpable por el Inversor."
+      ],
+      "win_condition": "Presentar al menos 2 evidencias digitales irrefutables que demuestren que el CEO operó el desvío de fondos."
+    },
+    {
+      "role_id": "ROLE_INVESTOR",
+      "display_name": "El Inversor Principal (Venture Capitalist)",
+      "alignment": "Juez / Auditor Implacable",
+      "starting_knowledge": "Posee la auditoría bancaria preliminar con la hora exacta y el monto del desfalco, pero desconoce quién del equipo directivo tiene la clave privada.",
+      "hidden_ability": {
+        "name": "Auditoría Sorpresa",
+        "description": "Puede convocar inmediatamente a la Sala de Juntas una 'Confrontación de Emergencia' sin necesidad de que termine el temporizador de exploración.",
+        "uses_per_match": 1
+      },
+      "individual_objectives": [
+        "Identificar al verdadero ladrón antes de firmar el cheque de la Serie B.",
+        "Recuperar el Pendrive con las llaves de la billetera fría para rescatar su capital.",
+        "Descartar testimonios falsos y no acusar al inocente."
+      ],
+      "win_condition": "Votar correctamente al autor del desfalco en la Asamblea y retener en su inventario el Pendrive o el Contrato Incriminatorio."
+    },
+    {
+      "role_id": "ROLE_LEAKER",
+      "display_name": "El Empleado Filtrador (Lead Dev / Whistleblower)",
+      "alignment": "Oportunista / Mercenario",
+      "starting_knowledge": "Vio al CEO entrar a la Sala de Servidores de madrugada y tiene copias de seguridad de los chats internos de Slack.",
+      "hidden_ability": {
+        "name": "Extorsión en la Sombra",
+        "description": "Puede solicitar un soborno privado: si el CEO le transfiere favores o inmunidad, puede guardar silencio; si no, amenaza con publicar la filtración a TechCrunch.",
+        "cooldown_seconds": 120
+      },
+      "individual_objectives": [
+        "Obtener el Pendrive o las capturas de la laptop antes que los demás.",
+        "Negociar con el Inversor por una recompensa económica O chantajear al CEO a cambio de no presentar las pruebas en la mesa.",
+        "Garantizar su supervivencia laboral o escapar impune con el botín."
+      ],
+      "win_condition": "Llegar a la fase final poseyendo al menos 2 evidencias críticas y pactar con el bando ganador, O filtrar las evidencias públicamente ganando en solitario."
+    }
+  ],
+  "clues_and_evidence": [
+    {
+      "id": "CLUE_SERVER_LOGS",
+      "name": "Logs de Auditoría en Servidor Central",
+      "room": "Sala de Servidores",
+      "type": "Digital / Crítica",
+      "description": "Registro en crudo de conexiones SSH. Muestra que la transferencia de fondos se ejecutó desde la dirección MAC fija del despacho de Presidencia, a pesar de usar el usuario del CTO.",
+      "interaction_requirements": {
+        "skill_check": "Terminal Bash / Minijuego de Decodificación (8 segundos)",
+        "can_be_pocketed": false,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": ["ROLE_CEO"],
+          "action_name": "Purgar partición /var/log/audit.log",
+          "channeling_time_seconds": 10
+        },
+        "backup_action": {
+          "authorized_roles": ["ROLE_CTO", "ROLE_LEAKER"],
+          "action_name": "Descargar dump forense a dispositivo móvil",
+          "channeling_time_seconds": 6
+        }
+      },
+      "evidence_weight": 3
+    },
+    {
+      "id": "CLUE_UNLOCKED_LAPTOP",
+      "name": "Laptop Desbloqueada de Dirección",
+      "room": "Despacho del CEO",
+      "type": "Digital / Visual",
+      "description": "Una MacBook Pro con la sesión abierta en un explorador blockchain mostrando la transacción de 1.8M USDT hacia una billetera de autocustodia no declarada.",
+      "interaction_requirements": {
+        "skill_check": "Inspección interactiva inmediata (3 segundos)",
+        "can_be_pocketed": false,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": ["ROLE_CEO"],
+          "action_name": "Cerrar sesión forzada y borrar caché de navegador",
+          "channeling_time_seconds": 4
+        },
+        "backup_action": {
+          "authorized_roles": ["ROLE_CTO", "ROLE_INVESTOR", "ROLE_LEAKER"],
+          "action_name": "Tomar fotografía con smartphone de la pantalla",
+          "channeling_time_seconds": 3
+        }
+      },
+      "evidence_weight": 2
+    },
+    {
+      "id": "CLUE_TORN_CONTRACT",
+      "name": "Borrador de Contrato Roto en el Basurero",
+      "room": "Cuarto de Archivo y Basura de Reciclaje",
+      "type": "Documental / Físico",
+      "description": "Hojas rasgadas de un contrato de consultoría ficticia con una sociedad fantasma en Delaware ('Apex Growth LLC'), firmadas a puño y letra por el CEO.",
+      "interaction_requirements": {
+        "skill_check": "Minijuego de reconstrucción de rompecabezas (unir 4 fragmentos rotos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": ["ROLE_CEO"],
+          "action_name": "Pasar por la trituradora de papel industrial",
+          "channeling_time_seconds": 5
+        },
+        "backup_action": null
+      },
+      "evidence_weight": 2
+    },
+    {
+      "id": "CLUE_SLACK_MESSAGE",
+      "name": "Mensaje Incriminatorio en Pantalla Olvidada",
+      "room": "Open Space (Área de Desarrolladores)",
+      "type": "Digital / Testimonial",
+      "description": "Un monitor secundario dejado encendido con un chat privado fijado: 'Asegúrate de culpar al pipeline de despliegue del CTO si los auditores preguntan mañana por el balance'.",
+      "interaction_requirements": {
+        "skill_check": "Presionar tecla espaciadora / Inspección visual simple (2 segundos)",
+        "can_be_pocketed": false,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": ["ROLE_CEO"],
+          "action_name": "Bloquear estación de trabajo remotamente",
+          "channeling_time_seconds": 3
+        },
+        "backup_action": {
+          "authorized_roles": ["ROLE_LEAKER", "ROLE_CTO", "ROLE_INVESTOR"],
+          "action_name": "Captura de pantalla enviada al inventario",
+          "channeling_time_seconds": 2
+        }
+      },
+      "evidence_weight": 1
+    },
+    {
+      "id": "CLUE_ENCRYPTED_PENDRIVE",
+      "name": "Pendrive USB Oculto tras la Cafetera",
+      "room": "Cafetería / Zona de Descanso",
+      "type": "Físico / Criptográfico",
+      "description": "Una memoria USB negra de titanio con etiqueta desgastada 'Recovery Seed Vault'. Contiene las llaves criptográficas privadas donde reposa el dinero malversado.",
+      "interaction_requirements": {
+        "skill_check": "Registrar mueble de cafetera (4 segundos de búsqueda a ciegas)",
+        "can_be_pocketed": true,
+        "can_be_deleted": false,
+        "deletion_action": null,
+        "backup_action": null
+      },
+      "evidence_weight": 3
+    }
+  ],
+  "sabotage_events": [
+    {
+      "id": "SABOTAGE_DDOS_ALARM",
+      "name": "Falso Ataque de Servidores y Alerta Sonora",
+      "trigger_room": "Sala de Servidores",
+      "effect": "Dispara alarmas ruidosas que desorientan la brújula y distorsionan el chat de voz de proximidad durante 20 segundos.",
+      "cooldown_seconds": 120
+    },
+    {
+      "id": "SABOTAGE_COFFEE_SPILL",
+      "name": "Corte de Red Local (Wi-Fi Caído)",
+      "trigger_room": "Cafetería / Zona de Descanso",
+      "effect": "Impide que los jugadores descarguen logs o fotos de laptops durante 30 segundos hasta que el router sea reiniciado.",
+      "cooldown_seconds": 90
+    }
+  ],
+  "turn_and_phase_flow": {
+    "round_limit": 3,
+    "phase_1_exploration": {
+      "name": "Sprint de Oficina (Exploración y Búsqueda)",
+      "duration_seconds": 180,
+      "rules": [
+        "Movimiento 2D libre con línea de visión cerrada tras puertas.",
+        "Los jugadores pueden interactuar con terminales, basureros y muebles.",
+        "Los conspiradores pueden sabotear la red o borrar evidencias si se quedan solos.",
+        "El Leaker puede susurrar ofertas de chantaje cuando está a solas con otro jugador."
+      ]
+    },
+    "phase_2_confrontation": {
+      "name": "Asamblea Extraordinaria del Directorio (Juicio Ejecutivo)",
+      "duration_seconds": 120,
+      "rules": [
+        "Todos los jugadores se sientan en la mesa de la Sala de Juntas.",
+        "Cada participante puede exponer hasta 2 evidencias obtenidas de su inventario.",
+        "Fase de alegatos: El Inversor interroga a los sospechosos cara a cara.",
+        "Votación ejecutiva: Se vota quién es despedido y denunciado ante la fiscalía corporativa."
+      ]
+    },
+    "victory_resolution": {
+      "ceo_victory": "Si el CTO es despedido o los logs y el contrato fueron destruidos con éxito.",
+      "cto_victory": "Si el CTO presenta el dump de logs y la foto de la laptop, logrando que el Inversor despida al CEO.",
+      "investor_victory": "Si el Inversor vota al CEO y rescata el Pendrive con las llaves criptográficas.",
+      "leaker_victory": "Si el Leaker cobra el rescate del CEO o vende los secretos al Inversor al mejor precio sin ser descubierto."
+    }
+  }
+}

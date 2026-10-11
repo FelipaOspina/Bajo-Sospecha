@@ -1,0 +1,24 @@
+# Godot 4
+.godot/
+.import/
+export/
+*.translation
+*.pck
+
+# Node.js / Servidor
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.env
+.env.local
+
+# IDEs y SO
+.vscode/
+.idea/
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini
