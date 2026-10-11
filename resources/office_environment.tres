@@ -1,4 +1,4 @@
-[gd_resource type="Environment" format=3]
+[gd_resource type="Environment" format=3 uid="uid://b5iw3lfb6emdg"]
 
 [resource]
 background_mode = 3
@@ -15,7 +15,6 @@ glow_bloom = 0.12
 glow_blend_mode = 0
 glow_hdr_threshold = 1.05
 glow_hdr_scale = 1.8
-glow_hdr_luminance_cap = 12.0
 adjustment_enabled = true
 adjustment_brightness = 0.92
 adjustment_contrast = 1.18

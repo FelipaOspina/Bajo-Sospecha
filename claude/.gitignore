@@ -1,0 +1,7 @@
+node_modules/
+dist/
+client/.godot/
+client/data/roles/
+client/data/evidence/
+*.log
+client/data/scenarios/

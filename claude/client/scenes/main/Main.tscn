@@ -1,0 +1,83 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scenes/main/Main.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/roles/RoleManager.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/evidence/EvidenceSystem.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/scenario/ScenarioManager.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/evidence/InventoryManager.gd" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/ui/EvidenceInspectionModal.tscn" id="6"]
+[ext_resource type="Script" path="res://scripts/player/PlayerSpawner.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/trial/TrialSystem.gd" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/ui/AssemblyBoardUI.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ResolutionScreen.tscn" id="10"]
+[ext_resource type="Script" path="res://scripts/ui/ChannelPresenter.gd" id="11"]
+[ext_resource type="Script" path="res://scripts/ui/TrialAssemblyManager.gd" id="12"]
+[ext_resource type="Script" path="res://scripts/ui/PhaseViewController.gd" id="13"]
+[ext_resource type="Script" path="res://scripts/map/NightLighting.gd" id="14"]
+[ext_resource type="Environment" path="res://assets/env/office_environment.tres" id="15"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("15")
+
+[node name="Map" type="Node2D" parent="."]
+
+[node name="Evidence" type="Node2D" parent="Map"]
+
+[node name="Players" type="Node2D" parent="Map" node_paths=PackedStringArray("role_manager")]
+script = ExtResource("7")
+role_manager = NodePath("../../RoleManager")
+
+[node name="NightLighting" type="Node2D" parent="Map" node_paths=PackedStringArray("players_root", "evidence_root")]
+script = ExtResource("14")
+players_root = NodePath("../Players")
+evidence_root = NodePath("../Evidence")
+
+[node name="RoleManager" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="InventoryManager" type="Node" parent="."]
+script = ExtResource("5")
+
+[node name="EvidenceSystem" type="Node" parent="." node_paths=PackedStringArray("inventory")]
+script = ExtResource("3")
+inventory = NodePath("../InventoryManager")
+
+[node name="ChannelPresenter" type="Node" parent="." node_paths=PackedStringArray("players", "evidence_system")]
+script = ExtResource("11")
+players = NodePath("../Map/Players")
+evidence_system = NodePath("../EvidenceSystem")
+
+[node name="TrialSystem" type="Node" parent="."]
+script = ExtResource("8")
+
+[node name="TrialAssemblyManager" type="Node" parent="." node_paths=PackedStringArray("trial")]
+script = ExtResource("12")
+trial = NodePath("../TrialSystem")
+
+[node name="ScenarioManager" type="Node" parent="." node_paths=PackedStringArray("role_manager", "spawn_root")]
+script = ExtResource("4")
+role_manager = NodePath("../RoleManager")
+spawn_root = NodePath("../Map/Evidence")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="AssemblyBoardUI" parent="UI" node_paths=PackedStringArray("trial", "assembly", "evidence_modal") instance=ExtResource("9")]
+trial = NodePath("../../TrialSystem")
+assembly = NodePath("../../TrialAssemblyManager")
+evidence_modal = NodePath("../EvidenceInspectionModal")
+
+[node name="ResolutionScreen" parent="UI" node_paths=PackedStringArray("trial") instance=ExtResource("10")]
+trial = NodePath("../../TrialSystem")
+
+[node name="EvidenceInspectionModal" parent="UI" node_paths=PackedStringArray("evidence_system", "inventory") instance=ExtResource("6")]
+evidence_system = NodePath("../../EvidenceSystem")
+inventory = NodePath("../../InventoryManager")
+
+[node name="PhaseViewController" type="Node" parent="." node_paths=PackedStringArray("exploration_view", "board", "inspection_modal")]
+script = ExtResource("13")
+exploration_view = NodePath("../Map")
+board = NodePath("../UI/AssemblyBoardUI")
+inspection_modal = NodePath("../UI/EvidenceInspectionModal")

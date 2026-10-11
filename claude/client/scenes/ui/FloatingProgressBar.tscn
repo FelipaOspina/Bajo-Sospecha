@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/floating_progress_bar.gd" id="1"]
+
+[node name="FloatingProgressBar" type="Node2D"]
+script = ExtResource("1")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 5
+follow_viewport_enabled = true
+
+[node name="BarAnchor" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+custom_minimum_size = Vector2(160, 34)
+size = Vector2(160, 34)
+mouse_filter = 2
+
+[node name="Layout" type="VBoxContainer" parent="CanvasLayer/BarAnchor"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 2
+
+[node name="ActionLabel" type="Label" parent="CanvasLayer/BarAnchor/Layout"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 11
+text = "Acción..."
+horizontal_alignment = 1
+text_overrun_behavior = 3
+
+[node name="ChannelingBar" type="ProgressBar" parent="CanvasLayer/BarAnchor/Layout"]
+custom_minimum_size = Vector2(90, 8)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+show_percentage = false

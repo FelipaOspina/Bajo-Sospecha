@@ -1,8 +1,8 @@
 [gd_scene load_steps=5 format=3 uid="uid://b1nv8w85m31pk"]
 
 [ext_resource type="Script" path="res://scripts/test_evidence_modal.gd" id="1_test_script"]
-[ext_resource type="Environment" path="res://resources/office_environment.tres" id="2_env"]
-[ext_resource type="PackedScene" path="res://scenes/evidence_inspection_modal.tscn" id="3_modal_scene"]
+[ext_resource type="Environment" uid="uid://b5iw3lfb6emdg" path="res://resources/office_environment.tres" id="2_env"]
+[ext_resource type="PackedScene" uid="uid://c7mpy8142dxk1" path="res://scenes/evidence_inspection_modal.tscn" id="3_modal_scene"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.0862745, 0.121569, 0.188235, 0.9)
@@ -28,6 +28,7 @@ offset_bottom = 720.0
 color = Color(0.0431373, 0.0588235, 0.0980392, 1)
 
 [node name="ServerGlowSim" type="ColorRect" parent="Background"]
+layout_mode = 0
 offset_left = 72.0
 offset_top = 160.0
 offset_right = 120.0
@@ -36,6 +37,7 @@ color = Color(0.1, 0.15, 0.22, 1)
 
 [node name="ServerLedCyan" type="ColorRect" parent="Background/ServerGlowSim"]
 self_modulate = Color(0, 2.5, 2.8, 1)
+layout_mode = 0
 offset_left = 8.0
 offset_top = 12.0
 offset_right = 40.0
@@ -44,6 +46,7 @@ color = Color(0, 0.9, 1, 1)
 
 [node name="ServerLedAmber" type="ColorRect" parent="Background/ServerGlowSim"]
 self_modulate = Color(2.5, 1.8, 0.2, 1)
+layout_mode = 0
 offset_left = 8.0
 offset_top = 32.0
 offset_right = 40.0
@@ -52,6 +55,7 @@ color = Color(0.9, 0.6, 0.1, 1)
 
 [node name="ServerLedRed" type="ColorRect" parent="Background/ServerGlowSim"]
 self_modulate = Color(3.5, 0.3, 0.3, 1)
+layout_mode = 0
 offset_left = 8.0
 offset_top = 52.0
 offset_right = 40.0
