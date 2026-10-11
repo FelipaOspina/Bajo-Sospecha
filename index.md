@@ -2,7 +2,7 @@
 
 **Effective Date:** October 11, 2026  
 **Developer:** Felipe Ospina / Bajo Sospecha Studio  
-**Contact Email:** [Your Contact Email Here]
+**Contact Email:** felipe.ospina.c258@gmail.com
 
 ---
 
@@ -45,4 +45,4 @@ We may update our Privacy Policy periodically. Any updates will be posted direct
 
 ## 10. Contact Us
 If you have any questions or concerns regarding this Privacy Policy, please contact us at:  
-**Email:** [Your Contact Email Here]
+**Email:** felipe.ospina.c258@gmail.com
