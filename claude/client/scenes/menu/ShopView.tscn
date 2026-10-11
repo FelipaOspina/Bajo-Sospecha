@@ -35,7 +35,7 @@ text = "TIENDA CORPORATIVA"
 [node name="ShopNote" type="Label" parent="Layout/Header"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Los 12 animales y sus habilidades son gratis para todos. Aquí solo hay ropa, gorras, zapatillas y mochilas, que se compran con monedas del juego que ganas jugando. Sin pagos con dinero real. Nada de esto cambia el juego ni dice nada de tu rol."
+text = "Los 12 animales y sus habilidades son gratis para todos. Aquí solo hay ropa, gorras, zapatillas y mochilas, que se compran con monedas del juego que ganas jugando. Nada de esto cambia el juego ni dice nada de tu rol."
 autowrap_mode = 3
 
 [node name="Body" type="HBoxContainer" parent="Layout"]

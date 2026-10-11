@@ -4,7 +4,20 @@ extends Node
 
 signal message_received(msg: Dictionary)
 
-@export var server_url := "ws://localhost:7777"
+## Servidor de producción (Render, con SSL). Es el de por defecto, también en el editor.
+const PRODUCTION_URL := "wss://bajo-sospecha.onrender.com"
+## Servidor local para pruebas (en la carpeta server: npm start).
+const LOCAL_URL := "ws://localhost:7777"
+## Render duerme el servidor gratuito tras un rato sin uso y la primera conexión lo
+## despierta: el apretón de manos puede tardar cerca de un minuto.
+const REMOTE_HANDSHAKE_S := 75.0
+const LOCAL_HANDSHAKE_S := 5.0
+
+## Servidor al que se conecta. Se elige al arrancar (ver resolve_server_url):
+##   godot ... -- --server=ws://localhost:7777   o   -- --local   (argumento)
+##   SERVER_URL=ws://localhost:7777   o   SERVER_URL=local          (variable de entorno)
+## Sin nada de eso: producción.
+var server_url := PRODUCTION_URL
 
 var player_id := ""
 var room_code := ""
@@ -18,6 +31,27 @@ var _sent_ms := {} # seq -> Time.get_ticks_msec() al enviar
 ## Ida y vuelta de la última intención confirmada (ms); -1 sin medir.
 var latency_ms := -1
 
+func _ready() -> void:
+	server_url = resolve_server_url(OS.get_cmdline_user_args() + OS.get_cmdline_args(), OS.get_environment("SERVER_URL"))
+
+## URL del servidor según los argumentos (--server=<url> o --local) y la variable
+## SERVER_URL ("local" = LOCAL_URL); si no hay nada, la de producción.
+static func resolve_server_url(args: PackedStringArray, env: String) -> String:
+	for a in args:
+		if a.begins_with("--server="):
+			return a.trim_prefix("--server=")
+		if a == "--local":
+			return LOCAL_URL
+	if env.strip_edges() != "":
+		return LOCAL_URL if env.strip_edges() == "local" else env.strip_edges()
+	return PRODUCTION_URL
+
+## true si el servidor es esta misma máquina (pruebas con npm start).
+static func is_local_url(url: String) -> bool:
+	var host := url.trim_prefix("wss://").trim_prefix("ws://").get_slice("/", 0)
+	host = host.get_slice("]", 0) + "]" if host.begins_with("[") else host.get_slice(":", 0)
+	return host in ["localhost", "127.0.0.1", "[::1]"]
+
 ## Abre el socket sin entrar en ninguna sala (el menú manda luego hello, cola, salas...).
 ## Devuelve OK si quedó abierto (o ya lo estaba).
 func open(url: String = server_url) -> Error:
@@ -27,7 +61,7 @@ func open(url: String = server_url) -> Error:
 	var err := _socket.connect_to_url(url)
 	if err != OK:
 		return err
-	await _wait_open()
+	await _wait_open(LOCAL_HANDSHAKE_S if is_local_url(url) else REMOTE_HANDSHAKE_S)
 	return OK if is_open() else ERR_CANT_CONNECT
 
 func is_open() -> bool:
@@ -103,7 +137,13 @@ static func local_time_ms() -> float:
 func server_time_ms() -> float:
 	return local_time_ms() + server_time_offset_ms
 
-func _wait_open() -> void:
+## Espera a que el socket se abra o falle; si tarda más de timeout_s, lo cierra.
+func _wait_open(timeout_s := REMOTE_HANDSHAKE_S) -> void:
+	var deadline := Time.get_ticks_msec() + int(timeout_s * 1000.0)
 	while _socket.get_ready_state() == WebSocketPeer.STATE_CONNECTING:
+		if Time.get_ticks_msec() > deadline:
+			_socket.close()
+			_socket.poll()
+			return
 		_socket.poll()
 		await get_tree().process_frame

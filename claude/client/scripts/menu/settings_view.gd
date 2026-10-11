@@ -8,6 +8,7 @@ var save_button: Button
 var server_label: Label
 var profile_label: Label
 var quality_option: OptionButton
+var pet_volume: HSlider
 
 const QUALITY := [["auto", "Automática (rendimiento en móvil)"], ["off", "Máxima (animación completa)"], ["on", "Rendimiento (más FPS)"]]
 
@@ -49,6 +50,17 @@ func build() -> void:
 	box.add_child(quality_option)
 	box.add_child(caption("En rendimiento cada animal se dibuja como una sola imagen: mismo aspecto, sin parpadeo ni orejas con muelle.", 12))
 	box.add_child(HSeparator.new())
+	box.add_child(heading("Sonidos de la mascota", 16))
+	pet_volume = HSlider.new()
+	pet_volume.name = "PetVolume"
+	pet_volume.min_value = 0
+	pet_volume.max_value = 100
+	pet_volume.step = 5
+	pet_volume.custom_minimum_size.y = 24
+	pet_volume.value_changed.connect(func(v: float) -> void: Account.set_pet_volume(v / 100.0))
+	box.add_child(pet_volume)
+	box.add_child(caption("Ronroneos, ladridos y demás al tocar, acariciar o dar de comer a tu animal en la sala. A cero, en silencio.", 12))
+	box.add_child(HSeparator.new())
 	server_label = caption("", 13, Color.WHITE)
 	box.add_child(server_label)
 	profile_label = caption("", 12)
@@ -61,6 +73,7 @@ func refresh() -> void:
 	for i in QUALITY.size():
 		if QUALITY[i][0] == ChibiBaker.mode:
 			quality_option.select(i)
+	pet_volume.set_value_no_signal(PetSfx.volume * 100.0)
 	server_label.text = "Servidor: %s · %s" % [Network.server_url, "conectado" if Account.online else "sin conexión"]
 	profile_label.text = "Id de perfil: %s" % (Account.profile_id if Account.profile_id != "" else "se crea al conectar")
 

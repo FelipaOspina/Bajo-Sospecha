@@ -13,6 +13,10 @@ const I_CREATE_ROOM := "create_room"   # sala privada con código de 6 → llega
 const I_JOIN_ROOM := "join_room"       # {"roomCode"}
 const I_QUEUE_MATCH := "queue_match"   # cola pública de 4 → llegan "queued" y, al llenarse, "welcome"
 const I_LEAVE_QUEUE := "leave_queue"
+# Mismos mensajes con los nombres del diseño del menú (botones Crear sala y Jugar).
+const CREATE_PRIVATE_ROOM := I_CREATE_ROOM
+const QUEUE_MATCH := I_QUEUE_MATCH
+const JOIN_ROOM := I_JOIN_ROOM
 const I_LEAVE_ROOM := "leave_room"
 const I_CHAT := "chat"                 # {"text"} solo en el lobby
 # Executive Pass y tienda (monedas del juego; sin pagos reales)

@@ -1,0 +1,20 @@
+{
+  "mapId": "mansion_clasica",
+  "evidence": [
+    { "id": "cuchillo",     "name": "Cuchillo ensangrentado", "description": "Tiene iniciales grabadas en el mango.", "tags": ["fisica", "incriminatoria"], "weight": 2 },
+    { "id": "carta",        "name": "Carta rota",             "description": "Una amenaza firmada con una sola letra.", "tags": ["documento", "incriminatoria"], "weight": 1,
+      "content": { "text": "Sé lo que hiciste en el sótano. Paga o hablo. — R." },
+      "access": { "view": { "items": ["llave_estudio"] } } },
+    { "id": "huella",       "name": "Huella de barro",        "description": "Talla 43, suela de jardín.", "tags": ["fisica"], "weight": 1 },
+    { "id": "llave_sotano", "name": "Llave del sótano",       "description": "Fría y recién usada.", "tags": ["llave"], "weight": 1 },
+    { "id": "llave_estudio","name": "Llave del estudio",      "description": "Tiene restos de cera.", "tags": ["llave"], "weight": 1 },
+    { "id": "ticket",       "name": "Ticket del tren",        "description": "Fechado a la hora del crimen.", "tags": ["documento", "coartada_falsa"], "weight": 1 }
+  ],
+  "interactables": [
+    { "id": "cocina_cajon",  "type": "evidence_spot", "position": { "x": 120, "y": 340 }, "radius": 48, "evidenceId": "cuchillo" },
+    { "id": "estudio_mesa",  "type": "evidence_spot", "position": { "x": 610, "y": 210 }, "radius": 48, "evidenceId": "carta" },
+    { "id": "jardin_suelo",  "type": "evidence_spot", "position": { "x": 900, "y": 520 }, "radius": 64, "evidenceId": "huella" },
+    { "id": "salon_baul",    "type": "container",     "position": { "x": 400, "y": 600 }, "radius": 56, "evidenceIds": ["llave_sotano", "ticket"] },
+    { "id": "pasillo_cuadro","type": "evidence_spot", "position": { "x": 300, "y": 120 }, "radius": 40, "evidenceId": "llave_estudio" }
+  ]
+}

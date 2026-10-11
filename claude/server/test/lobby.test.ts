@@ -185,3 +185,16 @@ test('WebSocket: hello, crear sala y unirse por código con clientes reales', as
   a.ws.close(); b.ws.close();
   await server.close();
 });
+
+test('HTTP: /health responde 200 en el mismo puerto (health check del hosting)', async () => {
+  const w = await world();
+  const server = new WsServer(0, w.gateway);
+  const wss = server.listen();
+  const port = (wss.address() as { port: number }).port;
+  const res = await fetch(`http://localhost:${port}/health`);
+  assert.equal(res.status, 200);
+  assert.equal(((await res.json()) as { status: string }).status, 'ok');
+  assert.equal((await fetch(`http://localhost:${port}/`)).status, 200);
+  assert.equal((await fetch(`http://localhost:${port}/nada`)).status, 404);
+  await server.close();
+});

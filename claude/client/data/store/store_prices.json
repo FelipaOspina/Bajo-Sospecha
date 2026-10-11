@@ -1,0 +1,16 @@
+{
+  "_doc": "Precios de los paquetes de Créditos Nexus, solo para MOSTRARLOS en la tienda. Todavía no hay pagos reales: el botón de compra está desactivado. Moneda base: dólares (USD) para la distribución internacional; 'regions' asigna a cada país (la parte de la región del locale del dispositivo, p. ej. es_CO → CO) su moneda local. Si la región no está en la tabla, o el paquete no tiene precio en esa moneda, se muestra el precio en USD. Es una tabla fija, no un tipo de cambio en vivo. Cuando se integre Google Play Billing, el precio local real (con impuestos y redondeo de la tienda) lo da Google Play en ProductDetails.formattedPrice y esta tabla queda como respaldo y para el escritorio. Para añadir un país: una línea en 'regions', su formato en 'currencies' y su precio en cada paquete.",
+  "version": 1,
+  "base_currency": "USD",
+  "currencies": {
+    "USD": { "symbol": "$", "decimals": 2, "thousands": ",", "decimal": "." },
+    "COP": { "symbol": "$", "decimals": 0, "thousands": ".", "decimal": "," }
+  },
+  "regions": { "CO": "COP" },
+  "packs": [
+    { "id": "creditos_100", "credits": 100, "bonus": 0, "price": { "USD": 0.99, "COP": 3900 } },
+    { "id": "creditos_550", "credits": 500, "bonus": 50, "price": { "USD": 4.99, "COP": 19900 } },
+    { "id": "creditos_1200", "credits": 1000, "bonus": 200, "price": { "USD": 9.99, "COP": 39900 } },
+    { "id": "creditos_2600", "credits": 2000, "bonus": 600, "price": { "USD": 19.99, "COP": 79900 } }
+  ]
+}

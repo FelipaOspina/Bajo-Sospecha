@@ -32,13 +32,15 @@ func _ready() -> void:
 	# 2. Skins del servidor; sin PNG se ve el chibi procedural.
 	_check(me.skin_id == "panda" and other.skin_id == "leon", "cada avatar lleva la skin que manda el servidor")
 	_check(not me.using_sprites and me.chibi.visible and me.chibi.config.get("id") == "panda", "sin PNG, chibi procedural con los colores de la skin")
-	_check(other.chibi.head.has_node("Mane") and me.chibi.face.get_children().any(func(n): return n.name.begins_with("Patch")), "cada animal tiene sus rasgos (melena del león, manchas del panda)")
-	var sphere: Polygon2D = me.chibi.head.get_node("HeadSphere")
-	_check(sphere.material is ShaderMaterial and sphere.texture != null and sphere.uv.size() == sphere.polygon.size(), "las piezas usan el shader chibi con UV")
-	_check(me.chibi.bake and not ChibiBaker.enabled() and me.chibi.get_node("BodyContainer").visible, "sin GPU (headless) no se hornea: piezas en vivo")
+	_check(other.chibi.features()["has_mane"] and me.chibi.features()["patches"] == ProceduralChibiAvatar.PATCHES["panda"], "cada animal tiene sus rasgos (melena del león, manchas del panda)")
+	var mat := me.chibi.material as ShaderMaterial
+	_check(mat != null and mat.shader.resource_path.ends_with("chibi_sdf.gdshader") and me.chibi.get_child_count() == 0, "el chibi es un solo rectángulo con el shader SDF (sin piezas sueltas)")
+	var panda_fur := Color("#F1F1EE")
+	_check((me.chibi.shader_param("fur_color") as Vector4).is_equal_approx(Vector4(panda_fur.r, panda_fur.g, panda_fur.b, 1.0)), "los colores de la skin llegan al shader (pelaje del panda)")
+	_check(me.chibi.bake and not ChibiBaker.enabled() and me.chibi.material == me.chibi.shader_material, "sin GPU (headless) no se hornea: shader en vivo")
 	_check(ChibiBaker.region("lado", 3) == Rect2(Vector2(3, 1) * ChibiBaker.CELL * ChibiBaker.RESOLUTION, ChibiBaker.CELL * ChibiBaker.RESOLUTION) and ChibiBaker.region("frente", -1).position.y == 3 * ChibiBaker.CELL.y * ChibiBaker.RESOLUTION, "la hoja horneada: una fila por vista y la pose quieta aparte")
 	GameState._replace(_snap("buho"))
-	_check(other.skin_id == "buho" and other.chibi.face.has_node("Beak"), "si el servidor cambia la skin, el avatar se actualiza")
+	_check(other.skin_id == "buho" and other.chibi.features()["beak"] and not other.chibi.features()["has_mane"], "si el servidor cambia la skin, el avatar se actualiza")
 
 	# 3. Color de rol solo en tu corbata.
 	_check(me.accent_color() == UiPalette.CRIMSON, "tu corbata lleva el color de tu rol (CEO en carmesí)")
@@ -66,12 +68,14 @@ func _ready() -> void:
 	for i in 6:
 		me.position.y -= 4.0
 		await get_tree().process_frame
-	_check(me.facing == "espalda" and not me.chibi.face.visible and not me.chibi.front.visible, "de espaldas no se le ve la cara ni la corbata")
+	_check(me.facing == "espalda" and me.chibi.shader_param("view") == ProceduralChibiAvatar.VIEWS["espalda"], "de espaldas no se le ve la cara ni la corbata (vista de espalda en el shader)")
 	for i in 8:
 		me.position.x -= 4.0
 		await get_tree().process_frame
 	_check(me.facing == "lado" and me.visuals.scale.x == -1.0, "caminando a la izquierda se pone de lado y se voltea")
-	_check(me.chibi.body_node.scale != Vector2.ONE and me.chibi.left_foot.position != me.chibi.right_foot.position, "rebota (aplasta y estira) y alterna los pies")
+	var ps := me.chibi.pose_state()
+	var pose_feet: Array = ps["feet"]
+	_check(ps["squash"] != 0.0 and (pose_feet[0] as Vector2).y != (pose_feet[1] as Vector2).y and is_equal_approx((me.chibi.shader_param("body_anim") as Vector4).y, ps["squash"]), "rebota (aplasta y estira) y alterna los pies, y el shader recibe la pose")
 
 	# 6. Nombre en píldora, fuera del cuerpo y sin oscurecerse.
 	_check(me.name_tag.text == "Ana" and me.name_tag.get_theme_constant("outline_size") > 0, "NameTagLabel con el nombre (nunca el rol) y contorno")

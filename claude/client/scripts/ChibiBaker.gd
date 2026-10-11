@@ -1,14 +1,16 @@
 class_name ChibiBaker
 extends RefCounted
 ## "Hornea" un chibi procedural en una hoja de sprites para dibujarlo como una sola
-## textura. El chibi en vivo son ~60 piezas con shader (~60 llamadas de dibujo); horneado
-## es 1. Pensado para móviles y web: con 8-10 jugadores en pantalla son ~600 llamadas
-## menos por frame.
+## textura. El chibi en vivo es un rectángulo con un shader SDF bastante pesado por píxel
+## (silueta, volumen, luz y cara se calculan en cada píxel); horneado es leer una textura.
+## Pensado para móviles y web: con 8-10 jugadores en pantalla ahorra casi todo el coste
+## de GPU de los avatares.
 ##
 ## Cómo: monta en un SubViewport transparente las 25 poses de la skin (frente quieto,
-## 8 pasos de frente, 8 de lado y 8 de espaldas), lo dibuja una vez y guarda la imagen.
-## Lo hace ProceduralChibiAvatar solo cuando tiene bake = true y enabled() lo permite;
-## mientras se hornea (un frame) se sigue viendo el chibi en vivo.
+## 8 pasos de frente, 8 de lado y 8 de espaldas), lo dibuja una vez y guarda la imagen
+## con mipmaps (al alejarse no se pixela ni parpadea). Lo hace ProceduralChibiAvatar
+## solo cuando tiene bake = true y enabled() lo permite; mientras se hornea (un frame)
+## se sigue viendo el chibi en vivo.
 ##
 ## Se pierde el parpadeo, la respiración y el muelle de las orejas; el paso, el rebote,
 ## los brazos y la cola siguen ahí. Cada combinación skin + color de acento se hornea
@@ -23,15 +25,18 @@ const WALK_FRAMES := 8
 ## Celda en unidades del chibi (escala 1) y dónde caen los pies dentro de ella.
 const CELL := Vector2(104, 136)
 const FEET := Vector2(52, 128)
-## Píxeles por unidad: el chibi del mapa va a 0.75, así que sobra resolución.
-const RESOLUTION := 1.25
+## Píxeles por unidad. El chibi del mapa va a 0.75 y las vistas previas horneadas hasta
+## 1.5; en un móvil la ventana se estira ~1.5-2x, así que 1.75 queda nítido (cada hoja
+## mide 1456x952 px, unos 7.4 MB con mipmaps).
+const RESOLUTION := 1.75
 const ROWS := {"caminando": 0, "lado": 1, "espalda": 2, "frente": 3}
-const MAX_CACHED := 16
+const MAX_CACHED := 12
+const SHEET_SHADER := "res://shaders/baked_sheet.gdshader"
 
 static var _cache := {}      # clave -> ImageTexture
 static var _order: Array[String] = []
 static var _pending := {}    # clave -> true mientras se hornea
-static var _premult: CanvasItemMaterial
+static var _premult: ShaderMaterial
 
 static func enabled() -> bool:
 	if DisplayServer.get_name() == "headless":
@@ -64,11 +69,13 @@ static func local_rect() -> Rect2:
 	return Rect2(-FEET, CELL)
 
 ## El SubViewport transparente guarda el color ya multiplicado por el alfa: el chibi
-## horneado se dibuja con este material para que los bordes no salgan oscuros.
-static func premultiplied() -> CanvasItemMaterial:
+## horneado se dibuja con este material (res://shaders/baked_sheet.gdshader) para que los
+## bordes no salgan oscuros. Probado en Forward+ con HDR 2D y en Compatibility: la hoja
+## se ve igual que el chibi en vivo.
+static func premultiplied() -> ShaderMaterial:
 	if _premult == null:
-		_premult = CanvasItemMaterial.new()
-		_premult.blend_mode = CanvasItemMaterial.BLEND_MODE_PREMULT_ALPHA
+		_premult = ShaderMaterial.new()
+		_premult.shader = load(SHEET_SHADER)
 	return _premult
 
 ## Pide la hoja y llama a done(clave, textura) cuando esté (si quien la pidió sigue vivo).
@@ -93,6 +100,9 @@ static func sheet(host: Node, skin_id: String, accent: Color, look := {}) -> Tex
 	vp.size = Vector2i((Vector2(WALK_FRAMES, ROWS.size()) * CELL * RESOLUTION).ceil())
 	vp.transparent_bg = true
 	vp.disable_3d = true
+	# Mundo propio: si compartiera el de la escena, el WorldEnvironment de la oficina (brillo,
+	# contraste, saturación y glow) se aplicaría al hornear y otra vez al dibujar la hoja.
+	vp.own_world_3d = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	tree.root.add_child(vp)
 	for view in ROWS:
@@ -114,6 +124,7 @@ static func sheet(host: Node, skin_id: String, accent: Color, look := {}) -> Tex
 	_pending.erase(k)
 	if img == null or img.is_empty():
 		return null
+	img.generate_mipmaps()   # alfa premultiplicado: los mipmaps promedian bien los bordes
 	var tex := ImageTexture.create_from_image(img)
 	_cache[k] = tex
 	_order.append(k)

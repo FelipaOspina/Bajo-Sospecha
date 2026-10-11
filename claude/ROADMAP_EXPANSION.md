@@ -98,6 +98,12 @@ Cómo leer la tabla:
 | Lobby nocturno con código, Compartir, tipo de caso y Opciones | Implementado |
 | Economía solo de cosméticos (tienda, Executive Pass, armario) | Implementado |
 | Avatares chibi refinados y horneado de sprites para móvil | Implementado |
+| Chibi "vinyl toy" con shader de campos de distancia, luz de estudio y sprites HD de 512×512 con mapa de normales | Implementado |
+| Botones de juego conectados (cola, sala privada, unirse, INICIAR) y sofá del lobby reubicado | Implementado |
+| Precios de Créditos Nexus en USD y COP según la región | Solo se muestran; falta integrar Google Play Billing (y App Store) para cobrar |
+| Mascota del lobby (Alter Ego): hambre, hidratación, comida por especie, caricias, reacciones y sonidos | Implementado; las barras se guardan en el dispositivo (pendiente: guardarlas en el servidor) |
+| Sonidos realistas de animales | Hay 27 sonidos sintetizados propios; pendiente cambiarlos por grabaciones con licencia CC0 si se quiere más realismo |
+| Servidor en producción (Render, `wss://`) con comprobación de salud | Cliente y servidor listos; el despliegue lo gestiona el autor |
 | Casos de Secuestro, Infidelidad, Robo e Investigación | Pendiente: aparecen como "Pronto" hasta que exista su caso |
 | Correo, Amigos y Gadgets | Pendiente: pantallas "Próximamente" |
 | Ilustraciones PNG por skin | Admitido por el código; faltan las ilustraciones |

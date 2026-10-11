@@ -6,8 +6,14 @@ extends Control
 ##  - En el centro, los animales de los jugadores alrededor de la mesa (LobbyStage).
 ##  - A la derecha, la lista de jugadores (corona del anfitrión, punto verde) y el tipo de caso.
 ##  - Abajo a la izquierda, el chat de la sala; abajo a la derecha, Opciones e INICIAR.
-## INICIAR sin sala entra en la cola pública; en la sala marca "listo" (la partida empieza
-## cuando todos lo están; las salas públicas además arrancan solas tras la cuenta atrás).
+##  - Abajo en el centro, tu mascota (PetPanel): Hambre, Hidratación y los botones de
+##    su comida y agua. Tu animal se puede tocar y acariciar en la sala (LobbyStage).
+## JUGAR (el botón grande sin sala) y Partida rápida entran en la cola pública
+## (Protocol.QUEUE_MATCH); Crear sala privada pide una sala con código
+## (Protocol.CREATE_PRIVATE_ROOM) y, al llegar el "welcome", el menú pasa a la sala.
+## Sin conexión, cada botón intenta conectar primero y, si no hay servidor, lo explica.
+## En la sala el botón grande es INICIAR y marca "listo" (la partida empieza cuando
+## todos lo están; las salas públicas además arrancan solas tras la cuenta atrás).
 ## Todas las acciones pasan por Account; los nombres nunca llevan el rol.
 
 signal toast_requested(text: String)
@@ -19,6 +25,8 @@ const MODE_IDLE := "idle"
 const MODE_QUEUE := "queue"
 const MODE_ROOM := "room"
 const MAX_CHAT_LINES := 60
+const OFFLINE_HELP := "No hay servidor en %s. Arráncalo (en la carpeta server: npm start) y vuelve a pulsar."
+const REMOTE_HELP := "No se pudo conectar con %s. Revisa tu conexión a internet y vuelve a pulsar."
 enum Option { COPY_CODE, SHARE, CHANGE_ANIMAL, SETTINGS, LEAVE }
 
 ## Título y escenario del caso que carga el cliente (Main los rellena).
@@ -63,6 +71,13 @@ var options_menu: PopupMenu
 var _list_signature := ""
 var _known_players := {}   # id -> nombre, para avisar en el chat de quién entra y sale
 var _room_code := ""
+var _connecting := false
+## Mascota (Alter Ego): estado guardado en el dispositivo, sus sonidos y su barra.
+var pet := PetCare.new()
+var pet_sfx: PetSfx
+var pet_panel: PetPanel
+var _pet_key := "-"
+var _pet_clock := 0.0
 
 func _ready() -> void:
 	_style()
@@ -74,8 +89,8 @@ func _ready() -> void:
 
 	start_button.pressed.connect(_on_start_pressed)
 	options_button.pressed.connect(_open_options)
-	quick_button.pressed.connect(func() -> void: Account.quick_match())
-	create_button.pressed.connect(func() -> void: Account.create_room())
+	quick_button.pressed.connect(play)
+	create_button.pressed.connect(create_private_room)
 	join_button.pressed.connect(_join_with_code)
 	code_input.text_submitted.connect(func(_t: String) -> void: _join_with_code())
 	code_input.text_changed.connect(_on_code_typed)
@@ -90,6 +105,7 @@ func _ready() -> void:
 	Account.queue_changed.connect(func(_p: int, _w: int, _m: int) -> void: refresh())
 	Account.online_changed.connect(func(_o: bool) -> void: refresh())
 	EventBus.chat_received.connect(_on_chat)
+	_build_pet()
 	refresh()
 
 func current_mode() -> String:
@@ -160,22 +176,121 @@ func refresh() -> void:
 	chat_input.editable = mode == MODE_ROOM
 	chat_send.disabled = mode != MODE_ROOM
 	chat_input.placeholder_text = "Escribe un mensaje…" if mode == MODE_ROOM else "Entra en una sala para chatear"
-	quick_button.disabled = not Account.online
-	create_button.disabled = not Account.online
-	join_button.disabled = not Account.online or Account.normalize_code(code_input.text).length() != 6
+	quick_button.disabled = _connecting
+	create_button.disabled = _connecting
+	join_button.disabled = _connecting or Account.normalize_code(code_input.text).length() != 6
 	_sync_start_button()
+	refresh_pet()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if mode == MODE_ROOM and GameState.lobby().get("startsAt") != null:
 		_sync_status_chip()
 		_sync_start_button()
+	_pet_clock += delta
+	if _pet_clock >= 1.0 and is_visible_in_tree():
+		_pet_clock = 0.0
+		refresh_pet()
+
+# ───── Mascota ─────
+
+func _build_pet() -> void:
+	pet_panel = PetPanel.new()
+	pet_panel.anchor_left = 0.0
+	pet_panel.anchor_right = 1.0
+	pet_panel.anchor_top = 1.0
+	pet_panel.anchor_bottom = 1.0
+	pet_panel.offset_left = 356.0    # entre el chat y Opciones/INICIAR
+	pet_panel.offset_right = -392.0
+	pet_panel.offset_top = -84.0
+	pet_panel.offset_bottom = -16.0
+	pet_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	add_child(pet_panel)
+	move_child(pet_panel, stage.get_index() + 1)
+	pet_panel.feed_pressed.connect(feed_pet)
+	pet_panel.drink_pressed.connect(water_pet)
+	pet_sfx = PetSfx.new()
+	pet_sfx.name = "PetSfx"
+	add_child(pet_sfx)
+	stage.pet_touched.connect(func(gesture: String, skin: String) -> void: pet_sfx.play(PetSfx.key_for(skin, gesture)))
+
+## Tu animal en la sala (el de tu asiento) o, sin sala, el elegido en tu perfil.
+func pet_skin() -> String:
+	var seat := stage.local_seat()
+	return seat.chibi.skin_id if seat else Account.selected_skin()
+
+func refresh_pet() -> void:
+	if pet_panel == null:
+		return
+	if Account.profile_id != _pet_key:
+		_pet_key = Account.profile_id
+		pet.load_state(_pet_key)
+	var skin := pet_skin()
+	var l := pet.levels(skin)
+	pet_panel.show_pet(skin, l["hunger"], l["hydration"])
+	var need := pet.need(skin)
+	stage.set_pet_need("water" if need == "hydration" else str(PetCare.food(skin).get("icon", "")) if need == "hunger" else "")
+
+## Le da su comida (según la especie). Si ya está lleno, niega con la cabeza.
+func feed_pet() -> void:
+	var skin := pet_skin()
+	var food := PetCare.food(skin)
+	if pet.feed(skin)["ok"]:
+		stage.pet_react("eat", "food:" + str(food.get("icon", "kibble")), true)
+		pet_sfx.play("comer")
+	else:
+		stage.pet_react("refuse", "", true)
+		pet_sfx.play("lleno")
+		toast_requested.emit("Tu %s ya está lleno." % str(SkinCatalog.skin(skin).get("name", skin)).to_lower())
+	refresh_pet()
+
+func water_pet() -> void:
+	var skin := pet_skin()
+	if pet.drink(skin)["ok"]:
+		stage.pet_react("drink", "food:water", true)
+		pet_sfx.play("beber")
+	else:
+		stage.pet_react("refuse", "", true)
+		pet_sfx.play("lleno")
+		toast_requested.emit("Tu %s no tiene sed." % str(SkinCatalog.skin(skin).get("name", skin)).to_lower())
+	refresh_pet()
 
 # ───── Acciones ─────
+
+## JUGAR / Partida rápida: entra en la cola pública (conecta antes si hace falta).
+func play() -> void:
+	if current_mode() != MODE_IDLE or not await ensure_online():
+		return
+	if current_mode() == MODE_IDLE:
+		Account.quick_match()
+
+## Crear sala privada: el servidor responde con el "welcome" de la sala nueva y el menú
+## muestra la sala de espera con su código.
+func create_private_room() -> void:
+	if current_mode() != MODE_IDLE or not await ensure_online():
+		return
+	if current_mode() == MODE_IDLE:
+		Account.create_room()
+
+## Conecta con el servidor si aún no lo está. false (y un aviso) si no responde.
+func ensure_online() -> bool:
+	if Account.online:
+		return true
+	if _connecting:
+		return false
+	_connecting = true
+	refresh()
+	toast_requested.emit("Conectando con el servidor…" if Network.is_local_url(Network.server_url) else "Conectando con el servidor… Si estaba dormido puede tardar hasta un minuto.")
+	var ok: bool = await Account.go_online()
+	_connecting = false
+	refresh()
+	if not ok:
+		toast_requested.emit((OFFLINE_HELP if Network.is_local_url(Network.server_url) else REMOTE_HELP) % Network.server_url)
+	return ok
 
 func _on_start_pressed() -> void:
 	match current_mode():
 		MODE_IDLE:
-			Account.quick_match()
+			play()
 		MODE_QUEUE:
 			Account.cancel_queue()
 		MODE_ROOM:
@@ -186,7 +301,8 @@ func _join_with_code() -> void:
 	if code.length() != 6:
 		toast_requested.emit("El código de sala tiene 6 caracteres.")
 		return
-	Account.join_room(code)
+	if await ensure_online():
+		Account.join_room(code)
 
 func _on_code_typed(text: String) -> void:
 	var clean := Account.normalize_code(text).left(6)
@@ -194,7 +310,7 @@ func _on_code_typed(text: String) -> void:
 		var caret := code_input.caret_column
 		code_input.text = clean
 		code_input.caret_column = mini(caret, clean.length())
-	join_button.disabled = not Account.online or clean.length() != 6
+	join_button.disabled = _connecting or clean.length() != 6
 
 func copy_code() -> void:
 	if _room_code.is_empty():
@@ -347,12 +463,15 @@ func _sync_status_chip() -> void:
 
 func _sync_start_button() -> void:
 	var am_ready := my_ready()
-	start_button.disabled = not Account.online and mode != MODE_ROOM
+	start_button.disabled = _connecting and mode != MODE_ROOM
 	match mode:
 		MODE_IDLE:
-			start_label.text = "INICIAR"
+			start_label.text = "JUGAR"
 			start_icon.icon = "play"
-			status_label.text = "Partida rápida · %d jugadores" % Account.match_size if Account.online else "Sin conexión con el servidor"
+			if _connecting:
+				status_label.text = "Conectando con el servidor…"
+			else:
+				status_label.text = "Partida rápida · %d jugadores" % Account.match_size if Account.online else "Sin conexión · pulsa JUGAR para reintentar"
 		MODE_QUEUE:
 			start_label.text = "CANCELAR"
 			start_icon.icon = "search"

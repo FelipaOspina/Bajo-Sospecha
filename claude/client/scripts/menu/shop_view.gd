@@ -3,8 +3,11 @@ extends MenuView
 ## Tienda corporativa: cosméticos del avatar (ropa, gorras, zapatillas y mochilas) y el
 ## Executive Pass Premium. Los 12 animales y sus habilidades son gratis para todos: aquí
 ## no se venden. Todo se paga con monedas del juego (Monedas Corporativas o Créditos
-## Nexus) que se ganan jugando; no hay pagos con dinero real. Los cosméticos no cambian
-## nada del juego ni dicen nada de tu rol.
+## Nexus) que se ganan jugando. Los cosméticos no cambian nada del juego ni dicen nada
+## de tu rol.
+## Arriba, los paquetes de Créditos Nexus con su precio en dinero real (USD, o la moneda
+## de tu región, p. ej. COP en es_CO; ver StorePrices). Solo se muestran: los pagos aún no
+## están integrados y el botón está desactivado.
 
 @onready var shelves: VBoxContainer = %Shelves
 @onready var premium_buy: Button = %PremiumBuy
@@ -33,6 +36,7 @@ func build() -> void:
 	crown.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	%PremiumBox.add_child(crown)
 	%PremiumBox.move_child(crown, 0)
+	_build_packs()
 	for slot in CosmeticCatalog.SLOTS:
 		var ids := shop_order(slot)
 		if ids.is_empty():
@@ -92,6 +96,58 @@ static func try_on(cosmetic_id: String) -> Dictionary:
 	if not it.is_empty():
 		look[it["slot"]] = cosmetic_id
 	return look
+
+## Paquetes de Créditos Nexus con el precio en la moneda de tu región.
+func _build_packs() -> void:
+	if StorePrices.packs().is_empty():
+		return
+	shelves.add_child(heading("CRÉDITOS NEXUS", 18, Color("#BFF6FF")))
+	var note := caption("Precios en %s según la región de tu dispositivo. Los pagos aún no están disponibles: por ahora los Créditos Nexus se ganan en el Executive Pass." % StorePrices.currency_for(), 12)
+	note.name = "PacksNote"
+	shelves.add_child(note)
+	var grid := GridContainer.new()
+	grid.name = "Grid_packs"
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	shelves.add_child(grid)
+	for pack in StorePrices.packs():
+		grid.add_child(_pack_card(pack))
+
+func _pack_card(pack: Dictionary) -> PanelContainer:
+	var panel := card(Color(0.07, 0.13, 0.2, 0.94), Color("#22D3EE", 0.35))
+	panel.name = "Pack_" + str(pack.get("id", ""))
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var box := vbox(4)
+	panel.add_child(box)
+	var icon := MenuIcon.make("diamond", Color.WHITE, 34)
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(icon)
+	var amount := heading("%s CN" % Progression.format_amount(int(pack.get("credits", 0))), 18)
+	amount.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(amount)
+	var bonus := int(pack.get("bonus", 0))
+	var extra := caption("+%s de regalo" % Progression.format_amount(bonus) if bonus > 0 else " ", 11, GREEN)
+	extra.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(extra)
+	var price := Label.new()
+	price.name = "Price"
+	price.text = StorePrices.price_text(pack)
+	price.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	price.add_theme_font_override("font", UiPalette.bold_font())
+	price.add_theme_font_size_override("font_size", 16)
+	price.add_theme_color_override("font_color", Color("#FFE7A8"))
+	box.add_child(price)
+	var buy := Button.new()
+	buy.name = "Buy"
+	buy.text = "Próximamente"
+	buy.disabled = true
+	buy.tooltip_text = "Los pagos con dinero real aún no están integrados."
+	buy.custom_minimum_size.y = 32
+	cta(buy)
+	box.add_child(buy)
+	return panel
 
 func card_for(id: String) -> Dictionary:
 	return _cards.get(id, {})

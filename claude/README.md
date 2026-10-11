@@ -55,7 +55,11 @@ juego-de-roles/
 │   │       └── trial/              # EvidenceCard (arrastrable), EvidenceDropZone (centro de la mesa)
 │   ├── scenes/main/Main.tscn       # Composition root del cliente
 │   ├── scenes/ui/                  # EvidenceInspectionModal, FloatingProgressBar, AssemblyBoardUI, ResolutionScreen
-│   ├── tests/                      # godot --headless res://tests/<ScenarioTest|EvidenceInspectionModalTest|FloatingProgressBarTest|TrialTest|NightLightingTest|PlayerAvatarTest|OfficeHUDTest|AbilitiesTest>.tscn
+│   ├── scripts/pet/                # Mascota del lobby: PetCare, PetReactions, PetIcons, PetPanel, PetSfx
+│   ├── shaders/                    # chibi_sdf (chibi de vinilo), baked_sheet (hoja horneada), crt_terminal_screen
+│   ├── assets/audio/pets/          # 27 sonidos de la mascota (tools/gen_pet_sfx.py) + LICENCIA.md
+│   ├── assets/sprites/hd/          # 12 animales a 512×512 con mapa de normales (tools/ExportHdSprites.tscn)
+│   ├── tests/                      # godot --headless res://tests/<ScenarioTest|EvidenceInspectionModalTest|FloatingProgressBarTest|TrialTest|NightLightingTest|PlayerAvatarTest|OfficeHUDTest|AbilitiesTest|StorePricesTest|ServerUrlTest|PetCareTest|PetLobbyTest>.tscn
 │   └── data/                       # Copia de shared/config (tools/sync-config.sh)
 ├── docs/networking.md              # Esquema de sincronización
 └── tools/sync-config.sh
@@ -201,11 +205,20 @@ El Theme cubre botones, paneles (`Panel` y `PanelContainer` con el cristal oscur
 - El servidor reparte una skin libre a cada jugador al entrar. En el lobby se puede cambiar con el intent `choose_skin` (`{"skinId": "panda"}`); se rechaza si otro la lleva.
 - La skin es pública y no depende del rol. `assign_by_role: true` haría que cada rol lleve su animal de `role_skins` (CEO león, CTO lobo, Inversor tigre, Filtrador zorro), pero eso delata el rol a todos, por eso viene en `false`.
 - Los PNG van en `client/assets/sprites/skins/<animal>/{frente,lado,espalda,caminando}.png`; el formato está en `client/assets/sprites/README.md`.
-- Mientras falte `frente.png`, el avatar dibuja el chibi procedural: `client/scripts/ProceduralChibiAvatar.gd`, con piezas Polygon2D y el shader `client/shaders/procedural_chibi_3d.gdshader` que da volumen de vinilo. `animate_walk(delta, velocidad)` aplica el rebote de juguete de cuerda (aplasta y estira, pasos alternos, brazos y orejas con muelle). Mira `docs/ui/chibi_catalogo.png` y `docs/ui/chibi_vistas.png`.
+- Mientras falte `frente.png`, el avatar dibuja el chibi procedural: `client/scripts/ProceduralChibiAvatar.gd` con el shader `client/shaders/chibi_sdf.gdshader`.
+  - El shader pinta el animal entero en un solo rectángulo con campos de distancia: silueta orgánica continua, volumen inflado de vinilo, oclusión de contacto, luz de estudio satinada y antialias a cualquier escala.
+  - `animate_walk(delta, velocidad)` aplica el rebote de juguete de cuerda (aplasta y estira, pasos alternos, brazos y orejas con muelle).
+  - `emote` añade gestos: ojos de gusto, boca abierta, cabeza, brazos y cola.
+  - Los colores van en sRGB y se pasan a lineal si el viewport usa HDR 2D (Forward+), así se ve igual en PC y en móvil.
+  - Mira `docs/ui/chibi_vinilo_antes_despues.png` y `docs/ui/chibi_catalogo.png`.
+- **Sprites HD:** `godot --path client res://tools/ExportHdSprites.tscn` (con GPU o un servidor X virtual) exporta los 12 animales a 512×512 con su mapa de normales en `client/assets/sprites/hd/`. Son para la tienda de apps, la prensa y como base de arte final; el juego sigue usando el chibi en vivo.
 - La corbata del chibi lleva el color de tu rol solo en tu personaje; al final de la partida, todas.
 - Los 12 animales son gratis para todos (`starter_skins` en `progression.json`). Cada uno trae su habilidad (ver *Habilidades por animal*).
 - **Cosméticos** (`shared/config/cosmetics/cosmetics.json`): ropa (traje o sudadera), gorra, zapatillas y mochila. Es lo único que se compra en la Tienda o se gana en el Executive Pass. Se equipan con `equip_cosmetic` y viajan en `look` dentro del estado público del jugador. Nunca tocan la corbata.
-- **Horneado** (`client/scripts/ChibiBaker.gd`): en móviles y web cada chibi se dibuja una vez en una hoja de 25 poses y se pinta como una textura (1 llamada de dibujo en vez de ~60). Se cambia en Configuración → Calidad de los avatares, o con `CHIBI_BAKE=1/0`.
+- **Horneado** (`client/scripts/ChibiBaker.gd`): en móviles y web cada chibi se dibuja una vez en una hoja de 25 poses y se pinta como una textura.
+  - La hoja sale a 1,75× con mipmaps, en un SubViewport con mundo propio (`own_world_3d`) para no aplicar dos veces el glow del ambiente.
+  - Leer una textura es mucho más barato para la GPU que el shader en vivo.
+  - Se cambia en Configuración → Calidad de los avatares, o con `CHIBI_BAKE=1/0`. Tu propio animal en la sala va siempre en vivo, para poder poner caras.
 
 **HUD de oficina.** `client/scenes/ui/OfficeHUD.tscn` (en `Main/UI`) se ve solo en la exploración.
 - Arriba a la izquierda, el panel **Tareas** muestra tus objetivos secretos con un punto de estado: ámbar el activo, blanco los pendientes, gris los hechos. Solo los ves tú.
@@ -231,6 +244,38 @@ Cada animal tiene una pasiva y una activa (tecla Q o botón abajo a la derecha, 
 - **Cliente:** `client/scripts/AnimalAbilities.gd` (autoload `Abilities`) tiene el diccionario y emite las señales del HUD. `AbilityButton` es el botón con la recarga y `ScentMarkers` dibuja los escondites del olfato.
 - **Roles:** ninguna habilidad revela roles. El animal se elige antes del reparto y las activas secretas solo las sabe quien las usa.
 - **Pruebas:** `server/test/abilities.test.ts` y `client/tests/AbilitiesTest.tscn`.
+
+## Menú: botones, sala y precios
+
+- **Botones:**
+  - **JUGAR** y **Partida rápida** envían `queue_match`.
+  - **Crear sala privada** envía `create_room` (`Protocol.CREATE_PRIVATE_ROOM`).
+  - **Unirse** envía `join_room`.
+  - En la sala, **INICIAR** marca "listo".
+  - Sin conexión, cada botón conecta primero y, si no puede, lo explica.
+- **Sala** (`LobbyStage.gd`): el sofá es bajo y está al fondo, sin tapar el ventanal, el tablero ni el lema. Asientos, pufs y mesa van ordenados por Y.
+- **Precios** (`client/data/store/store_prices.json`, `StorePrices.gd`):
+  - Precio base en USD y precio local en COP para la región `es_CO`. Por ejemplo, 4,99 USD se muestra como $19.900 COP.
+  - Solo se muestran: el botón dice "Próximamente".
+  - Para cobrar en Android hará falta integrar Google Play Billing, con los precios dados de alta en Play Console. Lo mismo para la App Store en iOS.
+
+## Mascota del lobby (Alter Ego)
+
+Tu animal es también tu mascota en la sala de espera.
+
+- **Barras:**
+  - **Hambre** e **Hidratación** bajan con el tiempo, también con el juego cerrado: 12 h y 8 h de llena a vacía.
+  - Se rellenan con los botones de su comida (según la especie: bambú para el panda, pescado para el gato, zanahoria para el conejo...) y de agua. Todo es gratis y no afecta a la partida.
+  - Con menos del 30 %, la barra parpadea y la mascota piensa en lo que le falta.
+- **Gestos:** un toque o clic sobre tu animal hace su reacción propia (el panda da una voltereta, el búho gira la cabeza...). Arrastrar por encima es una caricia: cierra los ojos de gusto y salen corazones.
+- **Sonidos:** 27 WAV en `client/assets/audio/pets/`.
+  - Los sintetiza `python3 client/tools/gen_pet_sfx.py` (solo Python 3, sin librerías). Son obra propia, sin grabaciones de terceros; ver `LICENCIA.md` en esa carpeta.
+  - Para usar grabaciones reales, deja un WAV con el mismo nombre (con licencia que lo permita, por ejemplo CC0) y apunta su origen.
+  - El volumen se ajusta en Configuración.
+- **Archivos y pruebas:**
+  - Código: `client/scripts/pet/`. Datos: `client/data/pets/pets.json`.
+  - Se guarda por perfil en `user://pet.cfg`, en el dispositivo.
+  - Pruebas: `client/tests/PetCareTest.tscn` y `PetLobbyTest.tscn`.
 
 ## Casos en formato libre
 
@@ -267,7 +312,28 @@ SCENARIO=../scenarios/caso_fraude_tech_startup.json npm start   # caso en format
 ./tools/sync-config.sh
 # Abrir client/ con Godot 4.3+ y ejecutar. En Main: scenario_id, player_name y room_code.
 # Hacen falta minPlayers clientes con el mismo código de sala para empezar.
+# Por defecto el cliente va al servidor de producción (wss://bajo-sospecha.onrender.com).
+# Para probar con el servidor local:
+godot --path client -- --local                       # o --server=ws://localhost:7777
+SERVER_URL=local godot --path client                 # lo mismo con variable de entorno
+
+# Pruebas del cliente (sin ventana)
+godot --headless --path client res://tests/PetLobbyTest.tscn
 ```
+
+**Servidor en Render.**
+- **Configuración del servicio:**
+  - El directorio raíz es la raíz del repositorio, porque el servidor usa `../shared`.
+  - Build: `cd server && npm install && npm run build`. Start: `cd server && npm start`.
+- **Puerto y salud:**
+  - El servidor escucha en `PORT` (Render lo pone solo).
+  - Responde 200 en `/health`: ponlo como *Health Check Path*.
+  - El TLS (`wss://`) lo pone Render.
+- **Plan gratuito:**
+  - El servidor se duerme sin uso y la primera conexión tarda hasta un minuto. El cliente espera 75 s y avisa.
+  - El disco no es persistente: los perfiles de `server/data/profiles.json` se pierden al reiniciar.
+- **Variables opcionales:** `SCENARIO` y `ROLE_SET`.
+- **Android:** la exportación necesita el permiso INTERNET.
 
 ## Pendiente / siguientes pasos
 
@@ -276,3 +342,5 @@ SCENARIO=../scenarios/caso_fraude_tech_startup.json npm start   # caso en format
 - Autenticación y reconexión con token.
 - Intent `resync` ante huecos de versión.
 - Arte: los marcos y barras están hechos con estilos de Godot, sin texturas.
+- Mascota: guardar las barras en el servidor (hoy van en el dispositivo) y, si se quiere, cambiar los sonidos sintetizados por grabaciones con licencia CC0.
+- Pagos reales: integrar Google Play Billing (y App Store) antes de activar la compra de Créditos Nexus.
