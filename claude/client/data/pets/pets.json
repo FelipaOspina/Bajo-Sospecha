@@ -1,0 +1,25 @@
+{
+  "_comment": "Mascota del lobby (Alter Ego): hambre e hidratación por animal, su comida según la especie, la reacción al tocarla y sus sonidos. La comida y el agua son gratis: no se venden ni dan ventaja en la partida. Ver scripts/pet/PetCare.gd y PetReactions.gd.",
+  "max": 100,
+  "start": 80,
+  "hours_to_empty": { "hunger": 12, "hydration": 8 },
+  "feed_amount": 35,
+  "drink_amount": 40,
+  "full_at": 95,
+  "low_at": 30,
+  "water": { "id": "agua", "name": "Agua fresca", "icon": "water" },
+  "species": {
+    "leon":     { "food": { "id": "filete",   "name": "Filete",          "icon": "meat" },    "fact": "Carnívoro: en la sabana caza en grupo.",              "tap": "mane_shake", "tap_name": "Sacude la melena" },
+    "lobo":     { "food": { "id": "hueso",    "name": "Hueso carnoso",   "icon": "bone" },    "fact": "Carnívoro: come carne y roe los huesos.",            "tap": "howl",       "tap_name": "Aúlla bajito" },
+    "tigre":    { "food": { "id": "carne",    "name": "Carne",           "icon": "meat" },    "fact": "Carnívoro: caza solo, de noche.",                    "tap": "chuff",      "tap_name": "Resopla de alegría (el saludo de los tigres)" },
+    "zorro":    { "food": { "id": "bayas",    "name": "Bayas silvestres", "icon": "berries" }, "fact": "Omnívoro: bayas, insectos y pequeños roedores.",     "tap": "pounce",     "tap_name": "Salta como cuando caza en la nieve" },
+    "gato":     { "food": { "id": "pescado",  "name": "Pescado",         "icon": "fish" },    "fact": "Carnívoro: le encanta el pescado.",                  "tap": "meow",       "tap_name": "Maúlla y mueve la cola" },
+    "perro":    { "food": { "id": "croquetas","name": "Croquetas",       "icon": "kibble" },  "fact": "Omnívoro: carne, cereales y verduras.",              "tap": "wag",        "tap_name": "Mueve la cola y ladra" },
+    "oso":      { "food": { "id": "miel",     "name": "Miel",            "icon": "honey" },   "fact": "Omnívoro: miel, frutas, raíces y salmón.",           "tap": "sway",       "tap_name": "Se balancea contento" },
+    "panda":    { "food": { "id": "bambu",    "name": "Bambú",           "icon": "bamboo" },  "fact": "Come bambú casi todo el día: hasta 14 horas.",       "tap": "roll",       "tap_name": "Da una voltereta" },
+    "conejo":   { "food": { "id": "zanahoria","name": "Zanahoria",       "icon": "carrot" },  "fact": "Herbívoro: heno y verduras; la zanahoria, de premio.", "tap": "binky",      "tap_name": "Hace un binky (salto de alegría)" },
+    "mapache":  { "food": { "id": "uvas",     "name": "Uvas",            "icon": "grapes" },  "fact": "Omnívoro: frutas, nueces, cangrejos de río...",      "tap": "rub_hands",  "tap_name": "Se frota las manitas" },
+    "buho":     { "food": { "id": "grillos",  "name": "Grillos",         "icon": "cricket" }, "fact": "Carnívoro: insectos y ratones; caza de noche.",      "tap": "head_turn",  "tap_name": "Gira la cabeza" },
+    "pinguino": { "food": { "id": "arenque",  "name": "Arenque",         "icon": "fish" },    "fact": "Come peces pequeños, calamares y krill.",           "tap": "flap",       "tap_name": "Aletea y canta" }
+  }
+}

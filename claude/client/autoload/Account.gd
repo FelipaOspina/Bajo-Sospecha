@@ -290,6 +290,7 @@ func _load() -> void:
 		profile_id = str(cfg.get_value("account", "profile_id", ""))
 		player_name = str(cfg.get_value("account", "name", player_name))
 		ChibiBaker.mode = str(cfg.get_value("video", "avatars", "auto"))
+		PetSfx.volume = clampf(float(cfg.get_value("audio", "pet_volume", PetSfx.volume)), 0.0, 1.0)
 	if env_name != "":
 		player_name = env_name
 
@@ -300,6 +301,7 @@ func _save() -> void:
 	cfg.set_value("account", "profile_id", profile_id)
 	cfg.set_value("account", "name", player_name)
 	cfg.set_value("video", "avatars", ChibiBaker.mode)
+	cfg.set_value("audio", "pet_volume", PetSfx.volume)
 	cfg.save(SAVE_PATH)
 
 ## Calidad de los avatares: "auto" (horneados en móvil y web), "off" (siempre en vivo,
@@ -307,4 +309,9 @@ func _save() -> void:
 ## Se aplica a los personajes que aparezcan a partir de ahora.
 func set_avatar_quality(mode: String) -> void:
 	ChibiBaker.mode = mode
+	_save()
+
+## Volumen de los sonidos de la mascota del lobby (0 = en silencio).
+func set_pet_volume(value: float) -> void:
+	PetSfx.volume = clampf(value, 0.0, 1.0)
 	_save()

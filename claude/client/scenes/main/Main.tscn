@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://cbjqtq08aemqn"]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/Main.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/roles/RoleManager.gd" id="2"]
@@ -15,39 +15,30 @@
 [ext_resource type="Script" path="res://scripts/ui/PhaseViewController.gd" id="13"]
 [ext_resource type="Script" path="res://scripts/map/NightLighting.gd" id="14"]
 [ext_resource type="Environment" path="res://assets/env/office_environment.tres" id="15"]
+[ext_resource type="PackedScene" path="res://scenes/ui/OfficeHUD.tscn" id="16"]
+[ext_resource type="PackedScene" path="res://scenes/menu/MainMenu.tscn" id="17"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1")
-scenario_id = null
-role_set_id = null
-player_name = null
-room_code = null
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = ExtResource("15")
 
 [node name="Map" type="Node2D" parent="."]
+y_sort_enabled = true
 
 [node name="Evidence" type="Node2D" parent="Map"]
+y_sort_enabled = true
 
 [node name="Players" type="Node2D" parent="Map" node_paths=PackedStringArray("role_manager")]
+y_sort_enabled = true
 script = ExtResource("7")
 role_manager = NodePath("../../RoleManager")
 
 [node name="NightLighting" type="Node2D" parent="Map" node_paths=PackedStringArray("players_root", "evidence_root")]
 script = ExtResource("14")
-night_color = null
 players_root = NodePath("../Players")
 evidence_root = NodePath("../Evidence")
-local_light_scale = null
-player_light_scale = null
-local_light_energy = null
-player_light_energy = null
-evidence_light_scale = null
-evidence_light_color = null
-floor_rect = null
-floor_color = null
-floor_tile = null
 
 [node name="RoleManager" type="Node" parent="."]
 script = ExtResource("2")
@@ -78,14 +69,15 @@ spawn_root = NodePath("../Map/Evidence")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
+[node name="OfficeHUD" parent="UI" node_paths=PackedStringArray("players") instance=ExtResource("16")]
+players = NodePath("../../Map/Players")
+
 [node name="AssemblyBoardUI" parent="UI" node_paths=PackedStringArray("trial", "assembly", "evidence_modal") instance=ExtResource("9")]
 trial = NodePath("../../TrialSystem")
 assembly = NodePath("../../TrialAssemblyManager")
 evidence_modal = NodePath("../EvidenceInspectionModal")
 
 [node name="ResolutionScreen" parent="UI" node_paths=PackedStringArray("trial") instance=ExtResource("10")]
-grow_horizontal = 2
-grow_vertical = 2
 trial = NodePath("../../TrialSystem")
 
 [node name="EvidenceInspectionModal" parent="UI" node_paths=PackedStringArray("evidence_system", "inventory") instance=ExtResource("6")]
@@ -97,3 +89,5 @@ script = ExtResource("13")
 exploration_view = NodePath("../Map")
 board = NodePath("../UI/AssemblyBoardUI")
 inspection_modal = NodePath("../UI/EvidenceInspectionModal")
+
+[node name="MainMenu" parent="." instance=ExtResource("17")]

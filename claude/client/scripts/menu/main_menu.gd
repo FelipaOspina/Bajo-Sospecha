@@ -8,6 +8,8 @@ extends CanvasLayer
 ##  - La Sala (LobbyView) ocupa toda la oficina; el resto se abre en un panel.
 ## Se oculta cuando empieza la partida (fase distinta de lobby) y vuelve al salir de ella.
 ## Amigos, Correo y Gadgets son pantallas "Próximamente".
+## Debajo de las pestañas, JUGAR lleva a la sala y entra en la cola pública desde
+## cualquier pestaña (LobbyView.play).
 
 const TABS := [
 	{"id": "sala", "label": "Sala", "icon": "users"},
@@ -57,6 +59,7 @@ var _toast_left := 0.0
 var _ping_timer := 0.0
 var _was_in_room := false
 var _connecting := false
+var play_button: Button
 
 func _ready() -> void:
 	_style_header()
@@ -79,6 +82,8 @@ func _ready() -> void:
 	Account.rewards_granted.connect(_on_rewards)
 	GameState.snapshot_applied.connect(func(_s: Dictionary) -> void: _sync_visibility())
 	EventBus.phase_changed.connect(func(_p: String, _e: int) -> void: _sync_visibility())
+	# Al entrar en una sala (crear, unirse o cola llena) se muestra la sala de espera.
+	EventBus.connected_to_server.connect(func(_id: String) -> void: show_tab("sala"))
 	toast.hide()
 	show_tab("sala")
 	_sync_header()
@@ -90,6 +95,8 @@ func start() -> void:
 		return
 	_connecting = true
 	ping_label.text = "Conectando…"
+	if not Network.is_local_url(Network.server_url):
+		show_toast("Conectando con el servidor… Si estaba dormido puede tardar hasta un minuto.")
 	var ok: bool = await Account.go_online()
 	_connecting = false
 	if not ok:
@@ -241,6 +248,25 @@ func _build_tabs() -> void:
 		tabs_box.add_child(b)
 		tab_buttons[t["id"]] = b
 		_paint_tab(t["id"])
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 6
+	tabs_box.add_child(gap)
+	play_button = Button.new()
+	play_button.name = "PlayButton"
+	play_button.custom_minimum_size = Vector2(0, 44)
+	play_button.focus_mode = Control.FOCUS_NONE
+	MenuView.cta(play_button)
+	LobbyView._icon_label(play_button, "play", "JUGAR", Color("#1A1405"))
+	var label: Label = play_button.get_node("Content").get_child(1)
+	label.add_theme_font_override("font", UiPalette.heading_font())
+	label.add_theme_font_size_override("font_size", 17)
+	play_button.pressed.connect(_on_play_pressed)
+	tabs_box.add_child(play_button)
+
+## JUGAR desde cualquier pestaña: a la sala y, si no estás en ninguna, a la cola pública.
+func _on_play_pressed() -> void:
+	show_tab("sala")
+	lobby.play()
 
 func _paint_tab(id: String) -> void:
 	var b: Button = tab_buttons[id]

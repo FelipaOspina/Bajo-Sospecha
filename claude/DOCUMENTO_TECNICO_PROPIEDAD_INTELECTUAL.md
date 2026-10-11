@@ -92,27 +92,42 @@ Cada intención lleva un número de secuencia y recibe `ack` o `rejected`, lo qu
 ### 2.5 Calidad y pruebas
 
 - Servidor: pruebas automatizadas con `node:test` (roles, pruebas, escenarios, juicio, skins, habilidades, progresión, salas y una partida completa).
-- Cliente: escenas de prueba ejecutables sin ventana (`godot --headless`) para escenarios, modal de inspección, barras flotantes, juicio, iluminación nocturna, avatar, HUD y habilidades.
+- Cliente: escenas de prueba ejecutables sin ventana (`godot --headless`) para escenarios, modal de inspección, barras flotantes, juicio, iluminación nocturna, avatar, HUD, habilidades, precios de la tienda, elección del servidor y la mascota del lobby (reglas y gestos con clics reales sobre la interfaz).
 - El código fuente actual suma unas 15.700 líneas entre TypeScript, GDScript y shaders (pruebas incluidas), más los archivos de datos y escenas.
 
 ## 3. Módulos desarrollados
 
 ### 3.1 Generador procedural de personajes Chibi 2.4D
 
-- **Archivos:** `client/scripts/ProceduralChibiAvatar.gd`, `client/scripts/player/PlayerAvatar.gd`, `client/scenes/player/PlayerAvatar.tscn`, `shared/config/skins/skins.json`.
+- **Archivos:** `client/scripts/ProceduralChibiAvatar.gd`, `client/shaders/chibi_sdf.gdshader`, `client/scripts/ChibiBaker.gd`, `client/shaders/baked_sheet.gdshader`, `client/scripts/player/PlayerAvatar.gd`, `client/scenes/player/PlayerAvatar.tscn`, `shared/config/skins/skins.json`.
 - **Qué hace:** genera por código, sin imágenes, un personaje "chibi" de proporciones infantiles (cabeza grande, cuerpo pequeño) con traje de oficina, a partir de la descripción de una de las 12 skins de animales (león, lobo, tigre, zorro, gato, perro, oso, panda, conejo, mapache, búho y pingüino): color de pelaje, tipo de orejas, color del traje y acento.
+- **Acabado "vinyl toy" con un shader de campos de distancia** (`chibi_sdf.gdshader`): cada personaje es un único rectángulo y el shader calcula en cada píxel el animal entero.
+  - Silueta orgánica y continua: cabeza, mofletes, orejas, cuerpo, brazos de dos tramos con mano, piernas, zapatillas, cola, mochila y gorra se funden con uniones suaves, sin contornos ni costuras.
+  - Volumen inflado: una normal "de almohada" sale de la distancia al borde, con relieves propios en brazos, hocico, ojos, nariz, pico y logotipos.
+  - Oclusión de contacto entre piezas y una sombra difusa en el suelo.
+  - Luz de estudio satinada: difusa envolvente, ambiente de cielo y suelo, brillo satinado con reflejo de caja de luz y luz de borde cálida.
+  - Antialias analítico, así que los bordes se ven limpios a cualquier escala.
+  - Una sola llamada de dibujo por personaje (la versión anterior usaba unas 60 piezas).
+- **Color igual en PC y en móvil:** los colores van al shader en sRGB y se pasan a lineal al final cuando el viewport usa HDR 2D (Forward+ y Mobile).
 - **2.4D:** el mundo es 2D, pero cada personaje tiene origen y colisión en los pies, sombra propia y orden por profundidad (Y-Sort), lo que da sensación de volumen y de que los personajes pasan por delante o por detrás de los objetos. Tiene vistas de frente, lado y espalda (de espaldas se ocultan los rasgos de la cara).
-- **Animación procedural:** `animate_walk()` aplica un rebote de "juguete de cuerda": aplastar y estirar, pasos alternos, brazos que se balancean y orejas con muelle; quieto, el personaje respira.
+- **Animación procedural:** `animate_walk()` aplica un rebote de "juguete de cuerda": aplastar y estirar, pasos alternos, brazos que se balancean y orejas con muelle; quieto, el personaje respira y parpadea.
+- **Gestos:** ojos cerrados de gusto (^ ^), boca o pico abiertos con lengua, giro de cabeza, brazos y meneo de cola. Los usa la mascota del lobby (ver 3.7).
 - **Reglas de diseño:** la apariencia depende de la skin, que es pública, y nunca del rol, que es secreto. La corbata muestra el color del rol solo en el propio personaje del jugador, y la de todos al final de la partida.
 - **Cosméticos:** ropa (traje o sudadera y su color), gorra, zapatillas y mochila se ponen sobre cualquier animal (`CosmeticCatalog.dress`). Nunca cambian la corbata.
-- **Horneado para móviles** (`client/scripts/ChibiBaker.gd`): en móviles y web, cada combinación de animal y ropa se dibuja una vez en una hoja de sprites (25 poses) y luego se pinta como una sola textura. Así se pasa de unas 60 llamadas de dibujo por personaje a una. Se pierden el parpadeo, la respiración y el muelle de las orejas. Se puede elegir en Configuración → Calidad de los avatares.
+- **Horneado para móviles** (`client/scripts/ChibiBaker.gd`):
+  - En móviles y web, cada combinación de animal y ropa se dibuja una vez en una hoja de sprites de 25 poses y luego se pinta como una textura.
+  - La hoja se hornea a 1,75 veces la resolución y con mipmaps, para que no se pixele al acercarse ni parpadee al alejarse.
+  - El horneado usa un mundo propio, así el resplandor del ambiente no se aplica dos veces. El resultado es idéntico al dibujo en vivo.
+  - Se pierden el parpadeo, la respiración, el muelle de las orejas y los gestos. Se puede elegir en Configuración → Calidad de los avatares.
+- **Sprites en alta resolución** (`client/tools/ExportHdSprites.tscn`): exporta los 12 animales a 512×512 píxeles, cada uno con su mapa de normales (convención OpenGL, verde hacia arriba), en `client/assets/sprites/hd/`. Salen del mismo shader, así que color y normales encajan píxel a píxel. Sirven para la tienda de aplicaciones, la prensa, este registro y como base de un futuro arte final.
 - Cuando existan ilustraciones PNG de una skin, `PlayerAvatar` las usa en lugar del chibi procedural.
 
 ### 3.2 Shaders e iluminación
 
 | Shader / recurso | Archivo | Efecto |
 |---|---|---|
-| Volumen de vinilo del chibi | `client/shaders/procedural_chibi_3d.gdshader` | Cada pieza plana del personaje recibe una normal esférica simulada, con luz difusa, brillo especular y luz de borde, para que parezca una figura de vinilo en 3D. Un solo material para todas las piezas. |
+| Chibi de vinilo | `client/shaders/chibi_sdf.gdshader` | Dibuja el personaje entero con campos de distancia: silueta continua, volumen inflado, oclusión de contacto, luz de estudio satinada y antialias (ver 3.1). También genera los mapas de normales de los sprites HD. |
+| Hoja horneada | `client/shaders/baked_sheet.gdshader` | Pinta la hoja de poses de `ChibiBaker` con alfa premultiplicado, conservando el tinte del nodo. |
 | Pantalla CRT | `client/shaders/crt_terminal_screen.gdshader` | Superpuesto a las terminales del visor de pruebas: curvatura de pantalla, líneas de escaneo animadas, aberración cromática y viñeta, calculadas en coordenadas locales del rectángulo. |
 | Ambiente con glow | `client/assets/env/office_environment.tres` | Resplandor HDR (solo brilla lo que supera el umbral) y ajuste de brillo, contraste y saturación de la escena. |
 | Iluminación nocturna | `client/scripts/map/NightLighting.gd` | Oscurece la oficina con un tono azul noche, dibuja el suelo y coloca luces: una linterna por jugador (más amplia para el jugador local) y una luz ámbar por pista, también para las que aparecen después. La interfaz queda fuera de la noche y conserva su color real. |
@@ -142,6 +157,19 @@ Diseño "Corporate Drama" (neo-noir ejecutivo), con paleta y tipografías centra
 - **Matchmaking y salas privadas:** cola pública (`queue_match` / `leave_queue`), creación de sala con código de 6 caracteres, abandono de sala y chat de sala.
 - **Animales gratis y economía solo de cosméticos:** los 12 animales y sus habilidades son de todos. La tienda y el pase solo dan ropa, gorras, zapatillas, mochilas y monedas; los perfiles antiguos se migran solos.
 - **Menú del cliente:** sala de espera nocturna (código, Compartir, tipo de caso y Opciones), Personajes (con la ficha de habilidades), Inventario (armario), Misiones, Executive Pass, Tienda y Configuración.
+
+- **Botones de juego conectados al servidor:**
+  - **JUGAR** y **Partida rápida** envían `queue_match`.
+  - **Crear sala privada** envía `create_room` (alias `CREATE_PRIVATE_ROOM` en el cliente).
+  - **Unirse** envía `join_room` con el código.
+  - En la sala, **INICIAR** marca "listo".
+  - Sin conexión, cada botón intenta conectar primero y explica qué falta.
+- **Sala de espera en 2.4D** (`LobbyStage.gd`): un sofá bajo al fondo que deja ver el ventanal, el tablero de casos y el lema. Los asientos, los pufs y la mesa se ordenan por profundidad (Y-Sort).
+- **Precios por región** (`client/scripts/menu/StorePrices.gd`, `client/data/store/store_prices.json`):
+  - Los paquetes de Créditos Nexus tienen precio base en dólares (por ejemplo, 4,99 USD).
+  - En Colombia (región `es_CO` del dispositivo) se muestran en pesos con su formato, por ejemplo $19.900 COP.
+  - Es solo informativo: el cobro aún no está integrado y el botón dice "Próximamente".
+  - Para Android, el cobro real tendrá que hacerse con Google Play Billing (ver la hoja de ruta).
 
 **En desarrollo:**
 
@@ -236,9 +264,68 @@ Cómo leer la tabla:
   - `docs/ui/menu_personajes.png`: ficha de habilidades.
   - `docs/ui/menu_tienda.png`: tienda solo de cosméticos.
 
+### 3.7 MASCOTA DEL LOBBY (ALTER EGO)
+
+En la sala de espera, el animal de cada jugador es también su mascota virtual.
+
+- **Necesidades:**
+  - Dos barras, **Hambre** e **Hidratación**, van de 0 a 100 % (llena = bien).
+  - Bajan solas con el tiempo, también con el juego cerrado: la de hambre se vacía en 12 horas y la de hidratación en 8.
+  - Por debajo del 30 % la barra parpadea en rojo y la mascota "piensa" en lo que necesita, con un bocadillo sobre la cabeza.
+- **Comida según la especie:**
+
+  | Animal | Comida | Animal | Comida |
+  |---|---|---|---|
+  | León | Filete | Oso | Miel |
+  | Lobo | Hueso carnoso | Panda | Bambú |
+  | Tigre | Carne | Conejo | Zanahoria |
+  | Zorro | Bayas silvestres | Mapache | Uvas |
+  | Gato | Pescado | Búho | Grillos |
+  | Perro | Croquetas | Pingüino | Arenque |
+
+  - Cada comida suma 35 puntos y el agua, 40.
+  - Si la barra ya está casi llena (95 %), la mascota niega con la cabeza.
+  - La comida y el agua son gratis, no se venden y no cambian nada en la partida.
+- **Tocar y acariciar:**
+  - Un toque o clic sobre tu animal provoca su reacción propia. Arrastrar el dedo o el ratón por encima es una caricia: cierra los ojos de gusto, se arrima y salen corazones.
+
+  | Animal | Reacción al tocarlo | Animal | Reacción al tocarlo |
+  |---|---|---|---|
+  | León | Sacude la melena | Oso | Se balancea con los brazos abiertos |
+  | Lobo | Aúlla bajito | Panda | Da una voltereta |
+  | Tigre | Resopla (el saludo amistoso de los tigres) | Conejo | Hace un "binky" (salto con giro) |
+  | Zorro | Salta en arco, como al cazar en la nieve | Mapache | Se frota las manitas |
+  | Gato | Maúlla y barre el aire con la cola | Búho | Gira la cabeza y ahueca las plumas |
+  | Perro | Da saltitos, saca la lengua y mueve la cola | Pingüino | Aletea y abre el pico para cantar |
+
+- **Sonidos:**
+  - Cada animal tiene uno al tocarlo y otro al acariciarlo (ronroneo, ladridos, aullido, balido, ulular...). Además hay sonidos comunes para comer, beber y "ya estoy lleno".
+  - Son 27 archivos sintetizados desde cero por un script propio (`client/tools/gen_pet_sfx.py`), por síntesis de fuente y filtro, sin grabaciones ni muestras de terceros. Son obra del titular.
+  - El origen y la licencia de cada archivo están en `client/assets/audio/pets/LICENCIA.md`.
+  - El volumen se ajusta en Configuración → Sonidos de la mascota.
+- **Sin revelar roles:** la mascota vive en la sala de espera, antes del reparto de roles. Solo depende del animal, que es público. Sus barras se guardan en el dispositivo de cada jugador y no se envían a nadie.
+- **Técnica:**
+  - Lógica y guardado por perfil: `client/scripts/pet/PetCare.gd`, con los datos en `client/data/pets/pets.json`. Se guarda en `user://pet.cfg`.
+  - Reacciones procedurales (desplazamiento, giro, estiramiento y gestos del shader en función del tiempo): `PetReactions.gd`.
+  - Iconos dibujados por código: `PetIcons.gd`. Barra de la interfaz: `PetPanel.gd`. Reproductor de sonidos: `PetSfx.gd`.
+  - Los gestos de toque y caricia se detectan en `client/scripts/menu/LobbyStage.gd`.
+  - El animal propio se dibuja siempre en vivo para poder poner caras. Los de los demás pueden ir horneados.
+- **Pruebas:** `client/tests/PetCareTest` (reglas, guardado, reacciones y sonidos) y `client/tests/PetLobbyTest` (barra, toques, caricias, comer y beber con clics simulados sobre la interfaz).
+
+### 3.8 Conexión con el servidor de producción
+
+- **Elección del servidor** (`client/autoload/Network.gd`):
+  - Por defecto, el cliente se conecta al servidor de producción con cifrado (`wss://bajo-sospecha.onrender.com`).
+  - Para pruebas locales se usa el argumento `-- --local` o `--server=<url>`, o la variable de entorno `SERVER_URL` (`local` equivale a `ws://localhost:7777`).
+  - La espera de conexión es de 75 segundos con el servidor remoto, porque el plan gratuito del alojamiento duerme el servidor y la primera conexión lo despierta. Con el servidor local son 5 segundos.
+- **Servidor** (`server/src/net/WsServer.ts`):
+  - Escucha en el puerto que indique el alojamiento (`PORT`).
+  - Responde a la comprobación de salud en `/health` (y `/`) en el mismo puerto que el WebSocket.
+  - El cifrado TLS lo pone el alojamiento.
+
 ## 4. Resumen de las mecánicas de juego
 
-1. **Preparación.** Los jugadores se reúnen en una sala con un código. Cada uno elige un animal (skin), todos gratis y cada uno con su habilidad. Cuando todos están listos, el servidor reparte en secreto los roles del caso. Cada jugador solo conoce su propio rol y sus objetivos.
+1. **Preparación.** Los jugadores se reúnen en una sala con un código. Cada uno elige un animal (skin), todos gratis y cada uno con su habilidad. Mientras esperan pueden cuidar y mimar a su animal (ver 3.7). Cuando todos están listos, el servidor reparte en secreto los roles del caso. Cada jugador solo conoce su propio rol y sus objetivos.
 2. **Briefing.** Se presenta el caso; por ejemplo, "Fraude y Chantaje en la Startup Tecnológica" (NexusCore), con los roles CEO, CTO, Inversor y Filtrador.
 3. **Investigación.** Los jugadores recorren la oficina a oscuras con su linterna. Al acercarse a una pista y pulsar E se abre el visor:
    - Cada animal tiene una habilidad activa (tecla Q) y una pasiva, como moverse más rápido, ocultar sus barras de acción o rugir para cortar las de otros (ver 3.6).
@@ -263,8 +350,9 @@ La obra se construye con las herramientas y recursos siguientes, que no son de a
 | `@types/node`, `@types/ws` | Tipos para TypeScript (dependencias de desarrollo) | MIT |
 | Inter, Space Grotesk, JetBrains Mono (Google Fonts) | Tipografías de la interfaz, incluidas en `client/assets/fonts/` | SIL Open Font License 1.1 (textos en `client/assets/fonts/licenses/`) |
 | Pillow y NumPy | Usadas solo por el script que genera los biseles (`tools/generate_bezels.py`); no se distribuyen con el juego | Licencia HPND (Pillow) y BSD (NumPy) |
+| Render (render.com) | Servicio de alojamiento del servidor en producción; no forma parte de la obra ni se distribuye con ella | Condiciones del servicio |
 
-Todo el código fuente del cliente y del servidor, los shaders, los datos de los escenarios, la narrativa de los casos y el diseño de la interfaz y las mecánicas son obra del titular. El shader CRT y el ambiente con glow vienen del prototipo anterior del propio autor ("Bajo Sospecha").
+Todo el código fuente del cliente y del servidor, los shaders, los datos de los escenarios, la narrativa de los casos, el diseño de la interfaz y las mecánicas, los sprites HD con sus mapas de normales y los sonidos de la mascota (sintetizados por `client/tools/gen_pet_sfx.py`, sin material de terceros) son obra del titular. Los sprites y los sonidos no proceden de bancos de imágenes o de audio ni de generadores externos: salen del código del proyecto. El shader CRT y el ambiente con glow vienen del prototipo anterior del propio autor ("Bajo Sospecha").
 
 ## 6. Relación de archivos principales
 
@@ -276,8 +364,8 @@ juego-de-roles/
 ├── client/autoload/        Red, estado y bus de eventos del cliente
 ├── client/scripts/         Lógica del cliente (roles, pruebas, escenarios, jugador, mapa, juicio, UI)
 ├── client/scenes/          Escenas de Godot (principal, jugador, interfaz)
-├── client/shaders/         Shaders propios (chibi de vinilo, pantalla CRT)
-├── client/assets/          Fuentes, biseles, tema, ambiente y sprites
+├── client/shaders/         Shaders propios (chibi de vinilo SDF, hoja horneada, pantalla CRT)
+├── client/assets/          Fuentes, biseles, tema, ambiente, sprites HD y sonidos de la mascota
 ├── client/tests/           Pruebas del cliente
 ├── scenarios/              Casos en formato libre
 ├── docs/                   Documentación técnica, capturas y vídeo de demostración
