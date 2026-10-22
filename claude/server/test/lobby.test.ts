@@ -108,16 +108,16 @@ test('cola pública: agrupa de 4 en 4, cuenta atrás y arranca sola', async () =
   const ids = ['q1', 'q2', 'q3', 'q4', 'q5'];
   for (const id of ids) { w.open(id); w.send(id, { t: 'hello', name: id, protocol: 1 }); }
   for (const id of ids.slice(0, 3)) assert.equal(w.send(id, { t: 'queue_match' }), 'ok');
-  assert.deepEqual(w.last('q3', 'queued'), { t: 'queued', position: 3, waiting: 3, matchSize: 4 });
+  assert.deepEqual(w.last('q3', 'queued'), { t: 'queued', position: 3, waiting: 3, matchSize: 4, minSize: 4, startsAt: null });
   assert.equal(w.send('q2', { t: 'leave_queue' }), 'ok');
-  assert.deepEqual(w.last('q3', 'queued'), { t: 'queued', position: 2, waiting: 2, matchSize: 4 });
+  assert.deepEqual(w.last('q3', 'queued'), { t: 'queued', position: 2, waiting: 2, matchSize: 4, minSize: 4, startsAt: null });
   for (const id of ['q2', 'q4', 'q5']) w.send(id, { t: 'queue_match' });
 
   const matched = ['q1', 'q3', 'q2', 'q4'];
   const code = w.lobbyOf('q1').lobby.code;
   assert.ok(matched.every((id) => w.last(id, 'welcome')?.roomCode === code), 'los 4 primeros, a la misma sala');
   assert.equal(w.last('q5', 'welcome'), undefined);
-  assert.deepEqual(w.last('q5', 'queued'), { t: 'queued', position: 1, waiting: 1, matchSize: 4 });
+  assert.deepEqual(w.last('q5', 'queued'), { t: 'queued', position: 1, waiting: 1, matchSize: 4, minSize: 4, startsAt: null });
   const room = w.directory.get(code)!;
   const lobby = (room['projector'].snapshotFor('q1') as RoomSnapshot).lobby;
   assert.equal(lobby.visibility, 'public');

@@ -1,5 +1,6 @@
 import type { EvidenceAccess, EvidenceActionConfig, EvidenceDefinition, EvidenceMapConfig, InteractableConfig, Vec2 } from '../evidence/types.js';
 import type { ObjectiveDefinition, RoleDefinition, RoleSetConfig, VisibilityRule } from '../roles/types.js';
+import { KNOWN_POWERS } from '../roles/RoleConfigValidator.js';
 import { createDefaultConditionRegistry, type Condition, type EndingConfig, type TrialConfig } from '../trial/index.js';
 import { isLegacyCase, normalizeLegacyCase } from './LegacyCaseNormalizer.js';
 
@@ -26,6 +27,12 @@ export interface ScenarioRole {
   count?: { min: number; max: number };
   weight?: number;
   knows_teammates?: boolean;
+  /** Solo entra en el reparto con al menos estos jugadores. */
+  min_players?: number;
+  /** Poderes con mecánica: "silence" (silenciar), "escort" (escoltar). */
+  powers?: string[];
+  /** Roles a los que siempre tiene motivo para silenciar. */
+  motive_targets?: string[];
   secret_objectives: (string | ScenarioObjective)[];
   visibility?: RoleDefinition['visibility'];
   modifiers?: RoleDefinition['modifiers'];
@@ -52,6 +59,8 @@ export interface ScenarioEvidenceSpawn {
   requires?: EvidenceAccess;
   /** Acciones canalizadas: [{ kind: "delete" | "backup", label, roles, seconds }] */
   actions?: EvidenceActionConfig[];
+  /** Roles a los que incrimina (móvil para silenciar a quien la lleve). */
+  incriminates?: string[];
 }
 
 export interface ScenarioFile {
@@ -61,13 +70,28 @@ export interface ScenarioFile {
   description?: string;
   player_count?: { min: number; max: number };
   /** Duración de fases en segundos. */
-  phase_durations?: Partial<Record<'briefing' | 'investigation' | 'discussion' | 'voting', number>>;
+  phase_durations?: Partial<Record<'briefing' | 'investigation' | 'emergency' | 'discussion' | 'voting', number>>;
+  /** Asambleas de emergencia: máximo por partida y qué expulsión termina la partida con qué opción del juicio. */
+  emergency?: EmergencyConfig;
   /** Roles culpables. Sin `endings`, genera el final por defecto "¿se acusó al culpable?". */
   culprit_roles?: string[];
   trial?: TrialConfig;
   endings?: EndingConfig[];
   roles: ScenarioRole[];
   evidence_spawns: ScenarioEvidenceSpawn[];
+}
+
+export interface EmergencyConfig {
+  /** Por defecto 3. */
+  max_per_match?: number;
+  /** Rol expulsado → opción del juicio que se da por votada (fin inmediato). */
+  expel_ends_game?: Record<string, string>;
+}
+
+/** Punto del mapa para las misiones de fantasma. */
+export interface GhostTaskPoint {
+  position: Vec2;
+  label: string;
 }
 
 export interface CompiledScenario {
@@ -77,6 +101,9 @@ export interface CompiledScenario {
   trial?: TrialConfig;
   endings: EndingConfig[];
   phaseDurationsMs: Record<string, number>;
+  emergency: { maxPerMatch: number; expelEndsGame: Record<string, string> };
+  /** Sitios de las pistas, para repartir misiones de fantasma. */
+  ghostTaskPoints: GhostTaskPoint[];
   /** Avisos no bloqueantes (campos ignorados, valores ajustados al normalizar...). */
   warnings: string[];
 }
@@ -146,7 +173,7 @@ export function compileScenario(input: unknown): CompiledScenario {
     if (!EVIDENCE_TYPES.includes(e.type)) p.push(`${where}: type "${e.type}" no es ${EVIDENCE_TYPES.join(' | ')}`);
     const position = toVec2(e.position);
     if (!position) p.push(`${where}: position debe ser {x, y} o [x, y]`);
-    for (const ref of [...(e.benefits ?? []), ...(e.harms ?? [])]) {
+    for (const ref of [...(e.benefits ?? []), ...(e.harms ?? []), ...(e.incriminates ?? [])]) {
       if (!roleIds.has(ref)) p.push(`${where}: referencia a rol inexistente "${ref}"`);
     }
     for (const req of [e.requires?.view, e.requires?.collect]) {
@@ -170,6 +197,7 @@ export function compileScenario(input: unknown): CompiledScenario {
       ...(e.content ? { content: e.content } : {}),
       ...(e.requires ? { access: e.requires } : {}),
       ...(e.actions?.length ? { actions: e.actions } : {}),
+      ...(e.incriminates?.length ? { incriminates: [...e.incriminates] } : {}),
       tags: [
         ...(e.tags ?? []),
         scenarioTags.evidence(e.id),
@@ -188,6 +216,15 @@ export function compileScenario(input: unknown): CompiledScenario {
     optionIds.add(o.id);
   }
   for (const r of s.culprit_roles ?? []) if (!roleIds.has(r)) p.push(`culprit_roles: rol inexistente "${r}"`);
+  for (const r of s.roles) {
+    if (r.min_players !== undefined && !Number.isInteger(r.min_players)) p.push(`rol "${r.id}": min_players debe ser entero`);
+    for (const pw of r.powers ?? []) if (!KNOWN_POWERS.includes(pw)) p.push(`rol "${r.id}": poder desconocido "${pw}"`);
+    for (const t of r.motive_targets ?? []) if (!roleIds.has(t)) p.push(`rol "${r.id}": motive_targets con rol inexistente "${t}"`);
+  }
+  for (const [role, option] of Object.entries(s.emergency?.expel_ends_game ?? {})) {
+    if (!roleIds.has(role)) p.push(`emergency.expel_ends_game: rol inexistente "${role}"`);
+    if (!optionIds.has(option)) p.push(`emergency.expel_ends_game: opción inexistente "${option}"`);
+  }
   const teams = new Set(s.roles.map((r) => r.team ?? r.id));
   const conditions = createDefaultConditionRegistry();
   for (const end of s.endings ?? []) {
@@ -213,6 +250,9 @@ export function compileScenario(input: unknown): CompiledScenario {
     count: r.count ?? { min: 1, max: 1 },
     weight: r.weight ?? 0,
     knowsTeammates: r.knows_teammates ?? false,
+    ...(r.min_players !== undefined ? { minPlayers: r.min_players } : {}),
+    ...(r.powers?.length ? { powers: [...r.powers] } : {}),
+    ...(r.motive_targets?.length ? { motiveTargets: [...r.motive_targets] } : {}),
     visibility: r.visibility ?? {
       default: 'partial',
       rules: [{ tags: [scenarioTags.benefits(r.id)], level: 'full' } satisfies VisibilityRule],
@@ -234,10 +274,45 @@ export function compileScenario(input: unknown): CompiledScenario {
     roleSet: { id: s.scenario_id, name: s.title, version: s.format_version ?? 1, minPlayers: count.min, maxPlayers: count.max, roles },
     map: { mapId: s.scenario_id, evidence: definitions, interactables },
     trial: s.trial,
-    endings: s.endings?.length ? s.endings : defaultEndings(s, roles),
+    endings: withSilenceEnding(s.endings?.length ? s.endings : defaultEndings(s, roles), s, roles),
     phaseDurationsMs: Object.fromEntries(Object.entries(s.phase_durations ?? {}).map(([k, v]) => [k, (v as number) * 1000])),
+    emergency: { maxPerMatch: s.emergency?.max_per_match ?? 3, expelEndsGame: { ...(s.emergency?.expel_ends_game ?? {}) } },
+    ghostTaskPoints: s.evidence_spawns.flatMap((e, i) => {
+      const position = toVec2(e.position);
+      return position ? [{ position, label: `${GHOST_TASK_VERBS[i % GHOST_TASK_VERBS.length]} (${e.room ?? 'oficina'})` }] : [];
+    }),
     warnings,
   };
+}
+
+/** Acciones que un fantasma hace "desde el más allá" en el sitio de una pista. */
+const GHOST_TASK_VERBS = [
+  'Hacer parpadear las luces',
+  'Revolver los papeles',
+  'Encender una pantalla',
+  'Abrir un cajón',
+  'Empujar una silla',
+  'Tirar una carpeta al suelo',
+];
+
+/** Id del final "los culpables vivos igualan o superan al resto". */
+export const SILENCE_ENDING_ID = 'silencio_total';
+
+/**
+ * Si el escenario no trae el final silencio_total y tiene roles con poder "silence",
+ * se añade uno: ganan esos roles (o los culprit_roles).
+ */
+function withSilenceEnding(endings: EndingConfig[], s: ScenarioFile, roles: RoleDefinition[]): EndingConfig[] {
+  if (endings.some((e) => e.id === SILENCE_ENDING_ID)) return endings;
+  const killers = s.culprit_roles?.length ? s.culprit_roles : roles.filter((r) => r.powers?.includes('silence')).map((r) => r.id);
+  if (!roles.some((r) => r.powers?.includes('silence')) || !killers.length) return endings;
+  return [...endings, {
+    id: SILENCE_ENDING_ID,
+    title: 'Silencio total',
+    description: 'Los culpables que quedan en pie ya igualan al resto: nadie más se atreve a hablar.',
+    when: { forced: SILENCE_ENDING_ID },
+    winners: { roles: killers },
+  }];
 }
 
 /** Final por defecto si hay culprit_roles y no hay endings: ¿el veredicto señaló al culpable? */
@@ -262,6 +337,9 @@ function conditionRefs(c: Condition, known: { roles: Set<string>; evidence: Set<
     else if (k === 'accused_role') list(v).filter((id) => !known.roles.has(id)).forEach((id) => out.push(`accused_role: rol inexistente "${id}"`));
     else if (k.startsWith('revealed_') || k.startsWith('destroyed_')) {
       if (k !== 'revealed_count') list(v).filter((id) => !known.evidence.has(id)).forEach((id) => out.push(`${k}: pista inexistente "${id}"`));
+    } else if (k === 'held_count') {
+      const o = v as { role: string };
+      if (!known.roles.has(o.role)) out.push(`held_count: rol inexistente "${o.role}"`);
     } else if (k === 'held_by_role') {
       const o = v as { role: string; evidence: string };
       if (!known.roles.has(o.role)) out.push(`held_by_role: rol inexistente "${o.role}"`);

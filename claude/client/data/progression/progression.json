@@ -184,5 +184,578 @@
         "credits": 250
       }
     }
+  },
+  "profile_level_curve": {
+    "_comentario": "XP para pasar del nivel N al N+1 = min(max_per_level, base + step × (N − 1)). Nv 1→2: 300, 2→3: 450, 3→4: 600… desde el 19→20, 3.000 fijos. El servidor manda; el cliente usa la misma fórmula solo para pintar.",
+    "base": 300,
+    "step": 150,
+    "max_per_level": 3000
+  },
+  "detective_path": {
+    "_comentario": "Ruta del Detective: niveles de perfil 1–15 que enseñan a jugar. Cada nivel tiene una lección y un reto que da XP extra la primera vez que se cumple en una partida real (lo cuenta el servidor con lo que pasa en la partida). Los retos de nivel N se activan al llegar al nivel N. Ningún reto depende de silenciar ni se muestra a otros jugadores: no revelan roles. Recompensas solo de monedas y cosméticos.",
+    "name": "Ruta del Detective",
+    "tutorial_reward": {
+      "xp": 300,
+      "coins": 150
+    },
+    "hint_max_level": 5,
+    "levels": [
+      {
+        "level": 1,
+        "title": "Recién llegado",
+        "lesson": {
+          "title": "Tu primer turno de noche",
+          "art": "office",
+          "body": [
+            "Estás atrapado de noche en el piso 14 de NexusCore: alguien robó 1,8 millones.",
+            "Cada jugador recibe un rol secreto con sus propios objetivos. Algunos son culpables y harán lo que sea para que no se sepa.",
+            "Al final hay un juicio: se exponen pruebas y se vota a quién despedir."
+          ],
+          "controls": [
+            [
+              "Briefing",
+              "Lee tu rol y tus objetivos"
+            ],
+            [
+              "Investigación",
+              "Explora y reúne pruebas"
+            ],
+            [
+              "Juicio",
+              "Expón y vota"
+            ]
+          ],
+          "tip": "Nunca enseñes tu pantalla de rol: tu rol es tu secreto."
+        },
+        "challenge": {
+          "id": "tutorial",
+          "text": "Completa la práctica «Primer día en NexusCore»",
+          "stat": "tutorial",
+          "target": 1,
+          "scope": "total",
+          "xp": 0
+        }
+      },
+      {
+        "level": 2,
+        "title": "Becario de auditoría",
+        "lesson": {
+          "title": "Explorar con línea de vista",
+          "art": "sight",
+          "body": [
+            "Solo ves lo que tu animal tiene a la vista: las paredes tapan a los demás jugadores.",
+            "Usa el minimapa para orientarte por las 16 salas y el pasillo central.",
+            "Muévete con calma: correr por todo el piso llama la atención."
+          ],
+          "controls": [
+            [
+              "WASD / flechas",
+              "Moverte"
+            ],
+            [
+              "Joystick",
+              "Moverte en el móvil"
+            ],
+            [
+              "Esc",
+              "Menú de partida"
+            ]
+          ],
+          "tip": "Las salas pequeñas son trampas: si entras solo, nadie te verá."
+        },
+        "challenge": {
+          "id": "jugar_1",
+          "text": "Juega una partida completa",
+          "stat": "played",
+          "target": 1,
+          "scope": "total",
+          "xp": 100
+        },
+        "reward": {
+          "coins": 100
+        }
+      },
+      {
+        "level": 3,
+        "title": "Analista junior",
+        "lesson": {
+          "title": "Examinar y recoger pruebas",
+          "art": "evidence",
+          "body": [
+            "Los objetos que brillan esconden pruebas. Acércate y examínalos para ver qué contienen.",
+            "Las pruebas de bolsillo se pueden guardar en tu inventario; las grandes solo se examinan donde están.",
+            "Un candado indica que te falta un permiso o una llave. Nunca te dice qué rol hace falta."
+          ],
+          "controls": [
+            [
+              "E / clic",
+              "Examinar"
+            ],
+            [
+              "Recoger",
+              "Guardar en el inventario"
+            ],
+            [
+              "Mochila",
+              "Ver tus pruebas"
+            ]
+          ],
+          "tip": "Llevar una prueba que incrimina a un culpable te convierte en su objetivo."
+        },
+        "challenge": {
+          "id": "recoger_2",
+          "text": "Recoge 2 pruebas en una misma partida",
+          "stat": "collected",
+          "target": 2,
+          "scope": "match",
+          "xp": 150
+        }
+      },
+      {
+        "level": 4,
+        "title": "Analista",
+        "lesson": {
+          "title": "Copias de seguridad",
+          "art": "backup",
+          "body": [
+            "Algunas pruebas digitales se pueden copiar: un dump forense, una foto, una descarga.",
+            "La copia tarda unos segundos y tienes que quedarte quieto: moverte la interrumpe.",
+            "Si alguien borra el original, tu copia sigue valiendo en el juicio."
+          ],
+          "controls": [
+            [
+              "Copiar",
+              "Botón en el visor de la prueba"
+            ],
+            [
+              "Quieto",
+              "No te muevas hasta acabar"
+            ],
+            [
+              "Barra",
+              "Progreso sobre tu animal"
+            ]
+          ],
+          "tip": "No todos los roles pueden copiar lo mismo. Si ves el botón, es tu oportunidad."
+        },
+        "challenge": {
+          "id": "copia_1",
+          "text": "Haz una copia de seguridad de una prueba",
+          "stat": "backups",
+          "target": 1,
+          "scope": "total",
+          "xp": 150
+        }
+      },
+      {
+        "level": 5,
+        "title": "Investigador",
+        "lesson": {
+          "title": "Silenciar solo con móvil",
+          "art": "silence",
+          "body": [
+            "Los culpables pueden silenciar, pero solo a quien es una amenaza: lleva una prueba contra ellos, los vio, copió algo o la historia le da un motivo.",
+            "La primera vez quedas noqueado 30 s y sueltas tus pruebas. La segunda, eres un fantasma.",
+            "Si ves un silenciamiento, recibes «Viste a X silenciar a Y»: es tu testimonio."
+          ],
+          "controls": [
+            [
+              "Noqueado",
+              "30 s en el suelo"
+            ],
+            [
+              "Testigo",
+              "Aviso en pantalla"
+            ],
+            [
+              "Fantasma",
+              "Sigues jugando"
+            ]
+          ],
+          "tip": "Compartir una prueba en público hace que deje de ser un secreto… y deje de ser un motivo."
+        },
+        "challenge": {
+          "id": "en_pie_1",
+          "text": "Termina una partida en pie (sin ser fantasma)",
+          "stat": "survived",
+          "target": 1,
+          "scope": "total",
+          "xp": 150
+        },
+        "reward": {
+          "coins": 200
+        }
+      },
+      {
+        "level": 6,
+        "title": "Investigador sénior",
+        "lesson": {
+          "title": "Cuerpos y reportes",
+          "art": "body",
+          "body": [
+            "Un compañero en el suelo es un cuerpo: acércate y repórtalo.",
+            "Reportar abre una asamblea de emergencia (como mucho 3 por partida) y pausa la investigación.",
+            "Quien encuentra el cuerpo no es necesariamente quien lo hizo… pero a veces sí."
+          ],
+          "controls": [
+            [
+              "Reportar",
+              "Botón rojo junto al cuerpo"
+            ],
+            [
+              "Alcance",
+              "Hay que estar cerca"
+            ],
+            [
+              "Asamblea",
+              "75 s de debate y voto"
+            ]
+          ],
+          "tip": "Fíjate en quién estaba cerca y en quién llegó tarde."
+        },
+        "challenge": {
+          "id": "reportar_1",
+          "text": "Reporta un cuerpo",
+          "stat": "reported",
+          "target": 1,
+          "scope": "total",
+          "xp": 200
+        }
+      },
+      {
+        "level": 7,
+        "title": "Inspector",
+        "lesson": {
+          "title": "Asambleas de emergencia",
+          "art": "meeting",
+          "body": [
+            "Cada jugador puede pulsar una vez el botón de emergencia para convocar una asamblea.",
+            "En la asamblea se habla y se vota: expulsar a alguien o saltar. Hace falta mayoría estricta.",
+            "El rol del expulsado no se revela. Votar a ciegas puede salir caro."
+          ],
+          "controls": [
+            [
+              "Emergencia",
+              "Una vez por partida"
+            ],
+            [
+              "Votar",
+              "Un jugador o «Saltar»"
+            ],
+            [
+              "Chat",
+              "Explica tu voto"
+            ]
+          ],
+          "tip": "Saltar también es una decisión: sin pruebas, mejor no expulsar."
+        },
+        "challenge": {
+          "id": "votar_asamblea",
+          "text": "Vota en una asamblea de emergencia",
+          "stat": "emergencyVotes",
+          "target": 1,
+          "scope": "total",
+          "xp": 150
+        }
+      },
+      {
+        "level": 8,
+        "title": "Inspector jefe",
+        "lesson": {
+          "title": "El debate",
+          "art": "chat",
+          "body": [
+            "En las asambleas y en el juicio se puede escribir en el chat.",
+            "Cuenta lo que viste, dónde estabas y qué pruebas tienes. Las mentiras se notan cuando no encajan con las pruebas.",
+            "Los fantasmas no hablan con los vivos."
+          ],
+          "controls": [
+            [
+              "Enter",
+              "Escribir"
+            ],
+            [
+              "Pruebas",
+              "Cítalas por su nombre"
+            ],
+            [
+              "Coartada",
+              "Dónde estabas y con quién"
+            ]
+          ],
+          "tip": "Una buena coartada tiene testigos."
+        },
+        "challenge": {
+          "id": "debate_1",
+          "text": "Escribe en el debate de una asamblea o del juicio",
+          "stat": "chats",
+          "target": 1,
+          "scope": "match",
+          "xp": 100
+        }
+      },
+      {
+        "level": 9,
+        "title": "Detective en prácticas",
+        "lesson": {
+          "title": "Presentar pruebas en el juicio",
+          "art": "trial",
+          "body": [
+            "Al acabar la investigación empieza el juicio en la Sala de Juntas.",
+            "Cada jugador puede exponer hasta 2 pruebas en la mesa: todos las verán completas.",
+            "Si te noquearon durante la partida ya no puedes exponer, pero sí votar."
+          ],
+          "controls": [
+            [
+              "Mano",
+              "Tus pruebas abajo"
+            ],
+            [
+              "Exponer",
+              "Arrástrala a la mesa"
+            ],
+            [
+              "Máx. 2",
+              "Elige las mejores"
+            ]
+          ],
+          "tip": "Una prueba sola no basta: busca dos que se confirmen entre sí."
+        },
+        "challenge": {
+          "id": "exponer_1",
+          "text": "Expón una prueba en el juicio",
+          "stat": "presented",
+          "target": 1,
+          "scope": "total",
+          "xp": 200
+        }
+      },
+      {
+        "level": 10,
+        "title": "Detective",
+        "lesson": {
+          "title": "El veredicto",
+          "art": "verdict",
+          "body": [
+            "Tras el debate se vota la decisión final: a quién despedir.",
+            "El voto es secreto hasta el final. El resultado decide qué equipo gana.",
+            "Cada rol tiene objetivos propios: a veces ganar no es solo acertar al culpable."
+          ],
+          "controls": [
+            [
+              "Votar",
+              "Elige una opción"
+            ],
+            [
+              "Cambiar",
+              "Puedes cambiar hasta el final"
+            ],
+            [
+              "Resultados",
+              "Se revelan los roles"
+            ]
+          ],
+          "tip": "Vota según las pruebas de la mesa, no según quién habla más alto."
+        },
+        "challenge": {
+          "id": "veredicto_1",
+          "text": "Vota en el juicio final",
+          "stat": "trialVotes",
+          "target": 1,
+          "scope": "match",
+          "xp": 150
+        },
+        "reward": {
+          "cosmetic": "gorra_negra"
+        }
+      },
+      {
+        "level": 11,
+        "title": "Detective de guardia",
+        "lesson": {
+          "title": "Fantasmas útiles",
+          "art": "ghost",
+          "body": [
+            "Si te silencian dos veces o te expulsan, eres un fantasma: atraviesas paredes y lo ves todo.",
+            "Haz misiones fantasma: al completarlas reaparece una prueba destruida o una pista brilla para los vivos.",
+            "Cada 20 s puedes marcar un punto con el ping fantasma para tu equipo."
+          ],
+          "controls": [
+            [
+              "Misión",
+              "Quédate 6 s en el punto"
+            ],
+            [
+              "Ping",
+              "Marca un lugar"
+            ],
+            [
+              "Silencio",
+              "No hablas con los vivos"
+            ]
+          ],
+          "tip": "Un buen fantasma puede ganar la partida para su equipo."
+        },
+        "challenge": {
+          "id": "fantasma_1",
+          "text": "Completa una misión fantasma",
+          "stat": "ghostTasks",
+          "target": 1,
+          "scope": "total",
+          "xp": 250
+        }
+      },
+      {
+        "level": 12,
+        "title": "Detective de casos",
+        "lesson": {
+          "title": "Roles, equipos y objetivos",
+          "art": "roles",
+          "body": [
+            "Hay culpables, inocentes y mercenarios. Cada rol tiene objetivos secretos que dan XP extra.",
+            "Los culpables se conocen entre sí; el resto tiene que deducirlo.",
+            "Algunos roles tienen poderes, como proteger a otro jugador un rato."
+          ],
+          "controls": [
+            [
+              "Objetivos",
+              "En tu panel de rol"
+            ],
+            [
+              "Equipo",
+              "Gana o pierde junto"
+            ],
+            [
+              "Secreto",
+              "Nunca lo digas en voz alta"
+            ]
+          ],
+          "tip": "Mentir sobre tu rol es parte del juego. Las pruebas no mienten."
+        },
+        "challenge": {
+          "id": "objetivo_1",
+          "text": "Cumple un objetivo secreto de tu rol",
+          "stat": "objectives",
+          "target": 1,
+          "scope": "total",
+          "xp": 200
+        }
+      },
+      {
+        "level": 13,
+        "title": "Detective de campo",
+        "lesson": {
+          "title": "Habilidades del animal",
+          "art": "ability",
+          "body": [
+            "Los 12 animales son gratis y cada uno tiene una habilidad activa y una pasiva.",
+            "Las habilidades no dependen del rol: ayudan a moverse, ver o rastrear.",
+            "Tienen tiempo de recarga: úsalas en el momento justo."
+          ],
+          "controls": [
+            [
+              "Q",
+              "Usar habilidad"
+            ],
+            [
+              "Botón",
+              "En el móvil, abajo a la derecha"
+            ],
+            [
+              "Recarga",
+              "Círculo que se llena"
+            ]
+          ],
+          "tip": "Cambia de animal en Personajes para descubrir estilos de juego distintos."
+        },
+        "challenge": {
+          "id": "habilidad_3",
+          "text": "Usa la habilidad de tu animal 3 veces en una partida",
+          "stat": "abilities",
+          "target": 3,
+          "scope": "match",
+          "xp": 150
+        },
+        "reward": {
+          "coins": 300
+        }
+      },
+      {
+        "level": 14,
+        "title": "Detective titular",
+        "lesson": {
+          "title": "Cruzar pruebas",
+          "art": "deduction",
+          "body": [
+            "Las pruebas encajan entre sí: una desmonta una coartada, otra da el móvil, otra sigue el dinero.",
+            "Busca contradicciones: alguien que dice estar en un sitio y una cámara que lo sitúa en otro.",
+            "Gana el equipo que mejor cuenta la historia con pruebas."
+          ],
+          "controls": [
+            [
+              "Coartada",
+              "¿Dónde estaba?"
+            ],
+            [
+              "Móvil",
+              "¿Por qué lo haría?"
+            ],
+            [
+              "Rastro",
+              "¿Adónde fue el dinero?"
+            ]
+          ],
+          "tip": "Dos pruebas que se confirman valen más que cinco sueltas."
+        },
+        "challenge": {
+          "id": "ganar_1",
+          "text": "Gana una partida",
+          "stat": "won",
+          "target": 1,
+          "scope": "total",
+          "xp": 250
+        }
+      },
+      {
+        "level": 15,
+        "title": "Detective jefe",
+        "lesson": {
+          "title": "Detective de NexusCore",
+          "art": "badge",
+          "body": [
+            "Ya conoces todas las reglas. Ahora toca dominarlas.",
+            "Prueba todos los animales, juega en salas privadas con amigos y completa el Executive Pass.",
+            "La Ruta del Detective termina aquí; tu carrera, no."
+          ],
+          "controls": [
+            [
+              "Pase",
+              "Recompensas de temporada"
+            ],
+            [
+              "Salas",
+              "Juega con amigos"
+            ],
+            [
+              "Misiones",
+              "XP en cada partida"
+            ]
+          ],
+          "tip": "Los mejores detectives escuchan más de lo que hablan."
+        },
+        "challenge": {
+          "id": "ganar_3",
+          "text": "Gana 3 partidas",
+          "stat": "won",
+          "target": 3,
+          "scope": "total",
+          "xp": 400
+        },
+        "reward": {
+          "cosmetic": "mochila_militar",
+          "coins": 500
+        }
+      }
+    ]
   }
 }

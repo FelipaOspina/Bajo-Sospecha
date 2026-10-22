@@ -12,13 +12,16 @@ var knows_teammates := false
 var secret_objectives: Array[Dictionary] = []  # {id, description, type, params}
 var visibility: Dictionary = {}                # vacío = regla por defecto del escenario
 var modifiers: Array = []
+var min_players := 0                           # 0 = sin mínimo
+var powers: Array[String] = []                 # "silence" (silenciar), "escort" (escoltar)
+var motive_targets: Array[String] = []         # roles a los que siempre tiene motivo para silenciar
 
 ## Convierte al formato que entiende RoleManager / RoleDefinition.from_dict.
 func to_role_dict() -> Dictionary:
 	var vis := visibility
 	if vis.is_empty():
 		vis = {"default": "partial", "rules": [{"tags": [ScenarioData.tag_benefits(id)], "level": "full"}]}
-	return {
+	var out := {
 		"id": id,
 		"name": display_name,
 		"team": team if team != "" else id,
@@ -30,3 +33,10 @@ func to_role_dict() -> Dictionary:
 		"objectives": secret_objectives,
 		"modifiers": modifiers,
 	}
+	if min_players > 0:
+		out["minPlayers"] = min_players
+	if not powers.is_empty():
+		out["powers"] = powers
+	if not motive_targets.is_empty():
+		out["motiveTargets"] = motive_targets
+	return out

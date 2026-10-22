@@ -6,7 +6,7 @@
   "difficulty": "Hard",
   "player_count": {
     "min": 4,
-    "max": 6
+    "max": 12
   },
   "setting": {
     "company_name": "NexusCore AI",
@@ -17,16 +17,33 @@
       "Open Space (Área de Desarrolladores)",
       "Sala de Juntas Ejecutiva",
       "Cafetería / Zona de Descanso",
-      "Cuarto de Archivo y Basura de Reciclaje"
+      "Cuarto de Archivo y Basura de Reciclaje",
+      "Sala de Seguridad (CCTV)",
+      "Recepción y Vestíbulo",
+      "Laboratorio de IA",
+      "Departamento de Finanzas",
+      "Departamento Legal",
+      "Recursos Humanos",
+      "Cuarto Eléctrico",
+      "Gimnasio",
+      "Terraza"
     ],
-    "ambient_event": "Noche de auditoría previa al anuncio de la Ronda de Inversión Serie B ($15M)",
-    "crisis_summary": "Un agujero de 1.8 millones de dólares fue drenado de la cuenta corporativa hacia una billetera fría anónima durante el último sprint de desarrollo."
+    "ambient_event": "Noche de tormenta y auditoría relámpago previa al cierre de la Ronda de Inversión Serie B ($15M con Vanguard Meridian Capital)",
+    "crisis_summary": "Un desfalco cibernético de 1.8 millones de dólares en USDT fue drenado de la tesorería de NexusCore AI hacia una billetera fría anónima mediante una empresa fantasma ('Apex Growth LLC'). El piso 14 entra en protocolo de emergencia: torniquetes bloqueados, servidores bajo monitorización y el Inversor exigiendo un veredicto definitivo antes del amanecer."
   },
   "roles": [
     {
       "role_id": "ROLE_CEO",
       "display_name": "El CEO (Fundador y Malversador)",
       "alignment": "Culpable / Encubridor",
+      "team": "culpables",
+      "powers": [
+        "silence"
+      ],
+      "knows_teammates": true,
+      "motive_targets": [
+        "ROLE_LEAKER"
+      ],
       "starting_knowledge": "Sabe que él desvió los 1.8M de dólares para pagar deudas de apuestas y malas inversiones cripto. Incriminó intencionalmente las credenciales SSH del CTO.",
       "hidden_ability": {
         "name": "Autoridad Corporativa",
@@ -36,14 +53,47 @@
       "individual_objectives": [
         "Borrar o corromper los registros de auditoría (logs) en la Sala de Servidores antes de la última asamblea.",
         "Destruir o esconder el borrador del contrato de asesoría fantasma.",
-        "Lograr que el Inversor culpe y destituya al CTO en la votación final."
+        "Lograr que el Inversor culpe y destituya al CTO en la votación final.",
+        "Borrar la grabación de la cámara del pasillo en la Sala de Seguridad antes de que alguien la exporte.",
+        "Hacer desaparecer las facturas de Apex Growth del Departamento de Finanzas."
       ],
       "win_condition": "Los logs son purgados O el CTO es sentenciado en el Juicio Ejecutivo con mayoría de votos."
+    },
+    {
+      "role_id": "ROLE_ACCOMPLICE",
+      "display_name": "El Abogado del CEO (Cómplice)",
+      "alignment": "Culpable / Cómplice",
+      "team": "culpables",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 6,
+      "powers": [
+        "silence"
+      ],
+      "knows_teammates": true,
+      "motive_targets": [
+        "ROLE_LEAKER"
+      ],
+      "starting_knowledge": "Eres el abogado personal del CEO. Le ayudaste a tapar el desvío, redactaste el despido del CTO y preparaste un NDA para comprar al Lead Dev. Tu voz está en la grabadora de la Sala de Juntas.",
+      "hidden_ability": {
+        "name": "Secreto Profesional",
+        "description": "Conoces al CEO y él te conoce. Puedes silenciar a quien tenga pruebas contra vosotros."
+      },
+      "individual_objectives": [
+        "Que nadie encuentre el acuerdo de confidencialidad que preparaste para el Lead Dev.",
+        "Hacer desaparecer el móvil desechable de la terraza antes de que alguien lea el chat.",
+        "Que la grabadora de la Sala de Juntas no llegue a la mesa: se oye tu voz.",
+        "Lograr que la asamblea despida al CTO."
+      ],
+      "win_condition": "Gana con el CEO: el CTO es despedido o las pruebas desaparecen, o los culpables en pie igualan al resto."
     },
     {
       "role_id": "ROLE_CTO",
       "display_name": "El CTO (Sospechoso Injusto)",
       "alignment": "Inocente / Investigador",
+      "team": "inocentes",
       "starting_knowledge": "Descubrió una anomalía de red a las 02:00 AM ejecutada con su clave SSH, pero él estaba desconectado. Sabe que alguien le plantó una trampa técnica.",
       "hidden_ability": {
         "name": "Diagnóstico Root",
@@ -53,7 +103,10 @@
       "individual_objectives": [
         "Extraer una copia forense no alterada de los logs de acceso en el Servidor.",
         "Demostrar que la IP de origen del robo físico pertenecía al despacho del CEO.",
-        "Evitar ser votado como culpable por el Inversor."
+        "Evitar ser votado como culpable por el Inversor.",
+        "Conseguir el registro del torniquete que prueba que tu tarjeta fue clonada.",
+        "Copiar el historial del clúster del Laboratorio de IA: tu pipeline estaba en pausa.",
+        "Encontrar en Recursos Humanos la carta de despido que ya te tenían redactada antes del robo."
       ],
       "win_condition": "Presentar al menos 2 evidencias digitales irrefutables que demuestren que el CEO operó el desvío de fondos."
     },
@@ -61,6 +114,7 @@
       "role_id": "ROLE_INVESTOR",
       "display_name": "El Inversor Principal (Venture Capitalist)",
       "alignment": "Juez / Auditor Implacable",
+      "team": "inocentes",
       "starting_knowledge": "Posee la auditoría bancaria preliminar con la hora exacta y el monto del desfalco, pero desconoce quién del equipo directivo tiene la clave privada.",
       "hidden_ability": {
         "name": "Auditoría Sorpresa",
@@ -70,7 +124,10 @@
       "individual_objectives": [
         "Identificar al verdadero ladrón antes de firmar el cheque de la Serie B.",
         "Recuperar el Pendrive con las llaves de la billetera fría para rescatar su capital.",
-        "Descartar testimonios falsos y no acusar al inocente."
+        "Descartar testimonios falsos y no acusar al inocente.",
+        "Encontrar el móvil del desfalco: las deudas del CEO.",
+        "Reunir al menos 3 pruebas distintas antes de la asamblea.",
+        "Conseguir el NDA del Departamento Legal con el que querían comprar el silencio del Lead Dev."
       ],
       "win_condition": "Votar correctamente al autor del desfalco en la Asamblea y retener en su inventario el Pendrive o el Contrato Incriminatorio."
     },
@@ -78,6 +135,7 @@
       "role_id": "ROLE_LEAKER",
       "display_name": "El Empleado Filtrador (Lead Dev / Whistleblower)",
       "alignment": "Oportunista / Mercenario",
+      "team": "mercenario",
       "starting_knowledge": "Vio al CEO entrar a la Sala de Servidores de madrugada y tiene copias de seguridad de los chats internos de Slack.",
       "hidden_ability": {
         "name": "Extorsión en la Sombra",
@@ -87,9 +145,104 @@
       "individual_objectives": [
         "Obtener el Pendrive o las capturas de la laptop antes que los demás.",
         "Negociar con el Inversor por una recompensa económica O chantajear al CEO a cambio de no presentar las pruebas en la mesa.",
-        "Garantizar su supervivencia laboral o escapar impune con el botín."
+        "Garantizar su supervivencia laboral o escapar impune con el botín.",
+        "Recuperar tu grabadora escondida en la Sala de Juntas antes de que el CEO la encuentre.",
+        "Vender al mejor postor una prueba que nadie más tenga.",
+        "Encontrar el móvil desechable de la terraza: si hablan de callarte, mejor tenerlo tú."
       ],
       "win_condition": "Llegar a la fase final poseyendo al menos 2 evidencias críticas y pactar con el bando ganador, O filtrar las evidencias públicamente ganando en solitario."
+    },
+    {
+      "role_id": "ROLE_SECURITY",
+      "display_name": "Jefe de Seguridad",
+      "alignment": "Inocente / Protector",
+      "team": "inocentes",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 5,
+      "powers": [
+        "escort"
+      ],
+      "starting_knowledge": "Llevas once años vigilando el piso 14. Anoche las cámaras del ala este se quedaron ciegas siete minutos y nadie te avisó. Hoy no vas a dejar que le pase nada a nadie.",
+      "hidden_ability": {
+        "name": "Escolta",
+        "description": "Proteges 45 segundos a un jugador cercano: el próximo intento de silenciarle fracasa. Recarga en 90 segundos."
+      },
+      "individual_objectives": [
+        "Conseguir el registro del SAI: alguien cortó la luz de las cámaras a propósito.",
+        "Recuperar la grabación de la cámara 3 antes de que la sobrescriban.",
+        "Que la asamblea señale al responsable del desfalco."
+      ],
+      "win_condition": "Gana con la plantilla si se despide a un culpable."
+    },
+    {
+      "role_id": "ROLE_JOURNALIST",
+      "display_name": "La Periodista de TechCrunch",
+      "alignment": "Oportunista / Prensa",
+      "team": "mercenario",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 9,
+      "starting_knowledge": "Te has colado en la noche de auditoría con un pase de invitada. Llevas una semana detrás de NexusCore: si sales con tres pruebas, mañana tienes la exclusiva.",
+      "hidden_ability": {
+        "name": "Fuente Anónima",
+        "description": "Sin poderes especiales: tu arma es lo que lleves en la mochila al final."
+      },
+      "individual_objectives": [
+        "Reunir 3 pruebas distintas antes de la asamblea.",
+        "Que al menos 3 pruebas acaben expuestas en la mesa del juicio.",
+        "Encontrar el móvil desechable: tu fuente dice que hay amenazas."
+      ],
+      "win_condition": "Exclusiva: termina con 3 o más pruebas distintas y nadie la acusa."
+    },
+    {
+      "role_id": "ROLE_CFO",
+      "display_name": "La Directora Financiera (Cómplice)",
+      "alignment": "Culpable / Cómplice",
+      "team": "culpables",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 10,
+      "powers": [
+        "silence"
+      ],
+      "knows_teammates": true,
+      "motive_targets": [
+        "ROLE_INVESTOR"
+      ],
+      "starting_knowledge": "Aprobaste las facturas de Apex Growth sabiendo que eran falsas. Si cae el CEO, tú vas detrás. El Inversor ya ha pedido ver la contabilidad.",
+      "hidden_ability": {
+        "name": "Cuadrar las Cuentas",
+        "description": "Conoces al CEO y él te conoce. Puedes silenciar a quien tenga pruebas contra vosotros."
+      },
+      "individual_objectives": [
+        "Que nadie saque las facturas de Apex Growth del Departamento de Finanzas.",
+        "Que el contrato roto de Apex Growth no llegue a la mesa.",
+        "Lograr que la asamblea despida al CTO."
+      ],
+      "win_condition": "Gana con el CEO."
+    },
+    {
+      "role_id": "ROLE_EMPLOYEE",
+      "display_name": "Empleado de NexusCore",
+      "alignment": "Inocente / Testigo",
+      "team": "inocentes",
+      "count": {
+        "min": 0,
+        "max": 4
+      },
+      "starting_knowledge": "Trabajas en NexusCore y te ha tocado quedarte la noche de la auditoría. No sabes nada… todavía.",
+      "individual_objectives": [
+        "Ayudar a señalar al responsable del desfalco.",
+        "Encontrar y guardar al menos 2 pruebas para la asamblea."
+      ],
+      "win_condition": "Gana con la plantilla si se despide a un culpable."
     }
   ],
   "clues_and_evidence": [
@@ -104,17 +257,29 @@
         "can_be_pocketed": false,
         "can_be_deleted": true,
         "deletion_action": {
-          "authorized_roles": ["ROLE_CEO"],
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
           "action_name": "Purgar partición /var/log/audit.log",
           "channeling_time_seconds": 10
         },
         "backup_action": {
-          "authorized_roles": ["ROLE_CTO", "ROLE_LEAKER"],
+          "authorized_roles": [
+            "ROLE_CTO",
+            "ROLE_LEAKER"
+          ],
           "action_name": "Descargar dump forense a dispositivo móvil",
           "channeling_time_seconds": 6
         }
       },
-      "evidence_weight": 3
+      "evidence_weight": 3,
+      "position": {
+        "x": 460,
+        "y": 120
+      },
+      "incriminates": [
+        "ROLE_CEO"
+      ]
     },
     {
       "id": "CLUE_UNLOCKED_LAPTOP",
@@ -127,17 +292,30 @@
         "can_be_pocketed": false,
         "can_be_deleted": true,
         "deletion_action": {
-          "authorized_roles": ["ROLE_CEO"],
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
           "action_name": "Cerrar sesión forzada y borrar caché de navegador",
           "channeling_time_seconds": 4
         },
         "backup_action": {
-          "authorized_roles": ["ROLE_CTO", "ROLE_INVESTOR", "ROLE_LEAKER"],
+          "authorized_roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR",
+            "ROLE_LEAKER"
+          ],
           "action_name": "Tomar fotografía con smartphone de la pantalla",
           "channeling_time_seconds": 3
         }
       },
-      "evidence_weight": 2
+      "evidence_weight": 2,
+      "position": {
+        "x": 1080,
+        "y": 60
+      },
+      "incriminates": [
+        "ROLE_CEO"
+      ]
     },
     {
       "id": "CLUE_TORN_CONTRACT",
@@ -150,13 +328,22 @@
         "can_be_pocketed": true,
         "can_be_deleted": true,
         "deletion_action": {
-          "authorized_roles": ["ROLE_CEO"],
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
           "action_name": "Pasar por la trituradora de papel industrial",
           "channeling_time_seconds": 5
         },
         "backup_action": null
       },
-      "evidence_weight": 2
+      "evidence_weight": 2,
+      "position": {
+        "x": 1780,
+        "y": 1205
+      },
+      "incriminates": [
+        "ROLE_CEO"
+      ]
     },
     {
       "id": "CLUE_SLACK_MESSAGE",
@@ -169,17 +356,30 @@
         "can_be_pocketed": false,
         "can_be_deleted": true,
         "deletion_action": {
-          "authorized_roles": ["ROLE_CEO"],
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
           "action_name": "Bloquear estación de trabajo remotamente",
           "channeling_time_seconds": 3
         },
         "backup_action": {
-          "authorized_roles": ["ROLE_LEAKER", "ROLE_CTO", "ROLE_INVESTOR"],
+          "authorized_roles": [
+            "ROLE_LEAKER",
+            "ROLE_CTO",
+            "ROLE_INVESTOR"
+          ],
           "action_name": "Captura de pantalla enviada al inventario",
           "channeling_time_seconds": 2
         }
       },
-      "evidence_weight": 1
+      "evidence_weight": 1,
+      "position": {
+        "x": 1760,
+        "y": 40
+      },
+      "incriminates": [
+        "ROLE_CEO"
+      ]
     },
     {
       "id": "CLUE_ENCRYPTED_PENDRIVE",
@@ -194,35 +394,473 @@
         "deletion_action": null,
         "backup_action": null
       },
-      "evidence_weight": 3
+      "evidence_weight": 3,
+      "position": {
+        "x": 1300,
+        "y": 780
+      },
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_CCTV_FOOTAGE",
+      "name": "Grabación de la Cámara 3 del Pasillo",
+      "room": "Sala de Seguridad (CCTV)",
+      "type": "Digital / Captura",
+      "description": "Clip de la cámara 3 a las 02:01: una figura con el abrigo largo del CEO entra a la Sala de Servidores con una laptop bajo el brazo. La marca de tiempo coincide con la transferencia.",
+      "position": {
+        "x": -400,
+        "y": -150
+      },
+      "interaction_requirements": {
+        "skill_check": "Revisar el archivo de vídeo (4 segundos)",
+        "can_be_pocketed": false,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
+          "action_name": "Sobrescribir el bucle de grabación",
+          "channeling_time_seconds": 6
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR",
+            "ROLE_LEAKER"
+          ],
+          "action_name": "Exportar el clip a una memoria",
+          "channeling_time_seconds": 5
+        }
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_ACCESS_BADGE_LOG",
+      "name": "Registro del Torniquete de Acceso",
+      "room": "Recepción y Vestíbulo",
+      "type": "Digital / Registro",
+      "description": "El torniquete marca la tarjeta del CTO entrando a las 01:58, pero el mismo registro muestra que el CTO salió por el parking a las 22:40 y no volvió. Alguien usó una tarjeta clonada.",
+      "position": {
+        "x": -410,
+        "y": 340
+      },
+      "interaction_requirements": {
+        "skill_check": "Consultar la terminal de recepción (3 segundos)",
+        "can_be_pocketed": false,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
+          "action_name": "Purgar el registro del torniquete",
+          "channeling_time_seconds": 5
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR"
+          ],
+          "action_name": "Imprimir el registro de accesos",
+          "channeling_time_seconds": 4
+        }
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_CASINO_DEBTS",
+      "name": "Avisos de Cobro junto a la Caja Fuerte",
+      "room": "Despacho del CEO",
+      "type": "Físico / Documental",
+      "description": "Un sobre arrugado con avisos de cobro de un casino online y de un exchange cripto: 1,6 M USD en deudas vencidas a nombre del CEO. Es el móvil del desfalco.",
+      "position": {
+        "x": 1270,
+        "y": 230
+      },
+      "interaction_requirements": {
+        "skill_check": "Registrar el despacho (3 segundos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
+          "action_name": "Quemar los avisos en la papelera",
+          "channeling_time_seconds": 4
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_INVESTOR",
+            "ROLE_LEAKER"
+          ],
+          "action_name": "Fotografiar los avisos de cobro",
+          "channeling_time_seconds": 3
+        }
+      },
+      "evidence_weight": 1,
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_GPU_CRON_PANEL",
+      "name": "Historial del Clúster de Entrenamiento",
+      "room": "Laboratorio de IA",
+      "type": "Digital / Crítica",
+      "description": "El 'pipeline de despliegue' del CTO estaba en pausa esa noche. La tarea programada que movió los fondos se lanzó desde la cuenta admin 'presidencia' a las 02:02.",
+      "position": {
+        "x": 2380,
+        "y": -110
+      },
+      "interaction_requirements": {
+        "skill_check": "Leer los registros del planificador (5 segundos)",
+        "can_be_pocketed": false,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
+          "action_name": "Reiniciar el clúster y borrar el historial",
+          "channeling_time_seconds": 8
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_CTO",
+            "ROLE_LEAKER"
+          ],
+          "action_name": "Copiar el historial del planificador",
+          "channeling_time_seconds": 6
+        }
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_HIDDEN_RECORDER",
+      "name": "Grabadora Escondida bajo la Mesa",
+      "room": "Sala de Juntas Ejecutiva",
+      "type": "Audio / Testimonial",
+      "description": "Una grabadora de voz pegada bajo la mesa de juntas. Se oye al CEO con su abogado: 'Si el CTO cae, la Serie B se firma igual y nadie mira la billetera'.",
+      "position": {
+        "x": 460,
+        "y": 1010
+      },
+      "interaction_requirements": {
+        "skill_check": "Palpar bajo la mesa (3 segundos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
+          "action_name": "Romper la grabadora",
+          "channeling_time_seconds": 3
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_LEAKER",
+            "ROLE_INVESTOR"
+          ],
+          "action_name": "Copiar el audio al móvil",
+          "channeling_time_seconds": 5
+        }
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_FAKE_INVOICES",
+      "name": "Facturas de Apex Growth LLC",
+      "room": "Departamento de Finanzas",
+      "type": "Documental / Físico",
+      "description": "Carpeta con 12 facturas de 'Apex Growth LLC' por 'asesoría estratégica', aprobadas solo con la firma del CEO y pagadas a la misma billetera fría del desvío.",
+      "position": {
+        "x": 2320,
+        "y": 990
+      },
+      "interaction_requirements": {
+        "skill_check": "Revisar el archivador de contabilidad (4 segundos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
+          "action_name": "Pasar las facturas por la trituradora",
+          "channeling_time_seconds": 5
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR"
+          ],
+          "action_name": "Escanear las facturas",
+          "channeling_time_seconds": 4
+        }
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_CEO",
+        "ROLE_CFO"
+      ]
+    },
+    {
+      "id": "CLUE_LAWYER_NDA",
+      "name": "Acuerdo de Confidencialidad sin Firmar",
+      "room": "Departamento Legal",
+      "type": "Documental / Físico",
+      "description": "Un NDA preparado por el abogado del CEO con una indemnización de 200.000 USD a nombre del Lead Dev. Falta su firma: querían comprar su silencio antes de la asamblea.",
+      "position": {
+        "x": 2900,
+        "y": -80
+      },
+      "interaction_requirements": {
+        "skill_check": "Revisar los cajones del bufete (3 segundos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_ACCOMPLICE",
+            "ROLE_CEO"
+          ],
+          "action_name": "Pasar el borrador por la trituradora del bufete",
+          "channeling_time_seconds": 4
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_LEAKER",
+            "ROLE_INVESTOR"
+          ],
+          "action_name": "Fotografiar el acuerdo",
+          "channeling_time_seconds": 3
+        }
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_HR_DISMISSAL",
+      "name": "Carta de Despido del CTO, ya Redactada",
+      "room": "Recursos Humanos",
+      "type": "Documental / Físico",
+      "description": "Carta de despido disciplinario del CTO por 'negligencia grave en la custodia de credenciales', fechada AYER, antes del robo. Alguien sabía lo que iba a pasar: premeditación.",
+      "position": {
+        "x": 3380,
+        "y": 0
+      },
+      "interaction_requirements": {
+        "skill_check": "Buscar en el archivador de personal (3 segundos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO",
+            "ROLE_ACCOMPLICE"
+          ],
+          "action_name": "Borrar la carta del expediente de personal",
+          "channeling_time_seconds": 4
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_CTO",
+            "ROLE_SECURITY"
+          ],
+          "action_name": "Escanear la carta de despido",
+          "channeling_time_seconds": 3
+        }
+      },
+      "evidence_weight": 1,
+      "incriminates": [
+        "ROLE_CEO",
+        "ROLE_ACCOMPLICE"
+      ]
+    },
+    {
+      "id": "CLUE_BLACKOUT_LOG",
+      "name": "Registro del SAI del Cuarto Eléctrico",
+      "room": "Cuarto Eléctrico",
+      "type": "Digital / Registro",
+      "description": "El SAI registra un corte de 7 minutos a las 01:55 que dejó ciegas las cámaras del ala este. Se ordenó desde el panel con la tarjeta de Presidencia.",
+      "position": {
+        "x": 3820,
+        "y": -160
+      },
+      "interaction_requirements": {
+        "skill_check": "Leer la pantalla del SAI (4 segundos)",
+        "can_be_pocketed": false,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO"
+          ],
+          "action_name": "Reiniciar el SAI y vaciar su registro",
+          "channeling_time_seconds": 6
+        },
+        "backup_action": {
+          "authorized_roles": [
+            "ROLE_SECURITY",
+            "ROLE_CTO"
+          ],
+          "action_name": "Exportar el registro del SAI",
+          "channeling_time_seconds": 4
+        }
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_GYM_LOCKER",
+      "name": "Taquilla 14 del Gimnasio",
+      "room": "Gimnasio",
+      "type": "Físico / Objeto",
+      "description": "Dentro de la taquilla 14, el abrigo largo del CEO. En el bolsillo, una tarjeta de acceso clonada con el número de empleado del CTO.",
+      "position": {
+        "x": 2960,
+        "y": 1000
+      },
+      "interaction_requirements": {
+        "skill_check": "Forzar el candado de la taquilla (4 segundos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_CEO",
+            "ROLE_ACCOMPLICE"
+          ],
+          "action_name": "Tirar la tarjeta clonada por el desagüe de las duchas",
+          "channeling_time_seconds": 4
+        },
+        "backup_action": null
+      },
+      "evidence_weight": 2,
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_BURNER_PHONE",
+      "name": "Móvil Desechable en una Maceta",
+      "room": "Terraza",
+      "type": "Digital / Testimonial",
+      "description": "Un móvil de prepago enterrado en una maceta de la terraza. Un único chat entre 'C' y 'Abogado': 'Si alguien habla, lo callamos antes de la asamblea'.",
+      "position": {
+        "x": 3700,
+        "y": 1080
+      },
+      "interaction_requirements": {
+        "skill_check": "Escarbar en las macetas (3 segundos)",
+        "can_be_pocketed": true,
+        "can_be_deleted": true,
+        "deletion_action": {
+          "authorized_roles": [
+            "ROLE_ACCOMPLICE"
+          ],
+          "action_name": "Formatear el móvil y tirar la SIM",
+          "channeling_time_seconds": 4
+        },
+        "backup_action": null
+      },
+      "evidence_weight": 1,
+      "incriminates": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ]
     }
   ],
   "sabotage_events": [
     {
       "id": "SABOTAGE_DDOS_ALARM",
-      "name": "Falso Ataque de Servidores y Alerta Sonora",
+      "name": "Protocolo Halón & Alerta Sonora de Servidores",
       "trigger_room": "Sala de Servidores",
-      "effect": "Dispara alarmas ruidosas que desorientan la brújula y distorsionan el chat de voz de proximidad durante 20 segundos.",
+      "effect": "Dispara sirenas estroboscópicas de alta frecuencia y falsa alarma de gas halón que desorientan la brújula y distorsionan el chat de voz de proximidad durante 20 segundos.",
       "cooldown_seconds": 120
     },
     {
       "id": "SABOTAGE_COFFEE_SPILL",
-      "name": "Corte de Red Local (Wi-Fi Caído)",
+      "name": "Cortocircuito en Cafetería & Caída de Wi-Fi",
       "trigger_room": "Cafetería / Zona de Descanso",
-      "effect": "Impide que los jugadores descarguen logs o fotos de laptops durante 30 segundos hasta que el router sea reiniciado.",
+      "effect": "Derrame deliberado sobre el cuadro eléctrico del router que impide descargar logs, capturas de pantalla o fotos durante 30 segundos.",
       "cooldown_seconds": 90
+    },
+    {
+      "id": "TRAP_SAFE_MAGNETIC_PURGE",
+      "name": "Sensor de Proximidad & Pulso Magnético EMP",
+      "trigger_room": "Despacho del CEO",
+      "effect": "Sensor trampa oculto en la caja fuerte que acelera el purgado de documentos y avisa discretamente al conspirador si alguien merodea su despacho.",
+      "cooldown_seconds": 100
+    },
+    {
+      "id": "TRAP_CCTV_FEED_LOOP",
+      "name": "Bucle Estroboscópico de Contra-Vigilancia",
+      "trigger_room": "Sala de Seguridad (CCTV)",
+      "effect": "Hackea la terminal de monitores de seguridad, reproduciendo un bucle falso de vídeo que enmascara el paso de jugadores en el pasillo durante 25 segundos.",
+      "cooldown_seconds": 110
+    },
+    {
+      "id": "TRAP_GPU_THERMAL_OVERLOAD",
+      "name": "Sobrecarga Térmica del Clúster de IA",
+      "trigger_room": "Laboratorio de IA",
+      "effect": "Eleva la temperatura de los servidores de entrenamiento, bloqueando el acceso a las consolas del planificador cron durante 25 segundos.",
+      "cooldown_seconds": 95
+    },
+    {
+      "id": "TRAP_INDUSTRIAL_SHREDDER",
+      "name": "Trituradora Industrial de Auto-Incineración",
+      "trigger_room": "Cuarto de Archivo y Basura de Reciclaje",
+      "effect": "Activa cuchillas industriales con incinerador térmico capaz de pulverizar contratos o facturas en solo 5 segundos.",
+      "cooldown_seconds": 75
+    },
+    {
+      "id": "TRAP_RFID_EMERGENCY_LOCK",
+      "name": "Bloqueo de Emergencia en Torniquetes",
+      "trigger_room": "Recepción y Vestíbulo",
+      "effect": "Cierra temporalmente los torniquetes de acceso al piso 14, obligando a los investigadores a buscar rutas alternativas por los pasillos.",
+      "cooldown_seconds": 120
     }
   ],
   "turn_and_phase_flow": {
     "round_limit": 3,
     "phase_1_exploration": {
-      "name": "Sprint de Oficina (Exploración y Búsqueda)",
-      "duration_seconds": 180,
+      "name": "Sprint de Oficina (Exploración, Trampas y Búsqueda)",
+      "duration_seconds": 300,
       "rules": [
-        "Movimiento 2D libre con línea de visión cerrada tras puertas.",
-        "Los jugadores pueden interactuar con terminales, basureros y muebles.",
-        "Los conspiradores pueden sabotear la red o borrar evidencias si se quedan solos.",
-        "El Leaker puede susurrar ofertas de chantaje cuando está a solas con otro jugador."
+        "Movimiento 2D libre con línea de visión cerrada tras puertas y muros.",
+        "Los jugadores pueden interactuar con terminales, cajas fuertes, racks y muebles.",
+        "Los conspiradores pueden detonar trampas de sala o borrar evidencias si se quedan solos.",
+        "El Leaker puede susurrar ofertas de extorsión cuando está a solas con otro jugador.",
+        "Las habilidades animales permiten neutralizar o eludir trampas de vigilancia.",
+        "Los culpables pueden silenciar a quien tenga un motivo contra ellos: la primera vez lo noquean 30 segundos, la segunda queda fuera como fantasma."
+      ]
+    },
+    "phase_emergency": {
+      "name": "Reunión de Emergencia",
+      "duration_seconds": 75,
+      "max_per_match": 3,
+      "expel_ends_game_roles": [
+        "ROLE_CEO"
+      ],
+      "rules": [
+        "Se convoca al reportar un cuerpo o con el botón de emergencia (una vez por jugador y partida) y pausa la exploración.",
+        "Votan los jugadores en pie: a un jugador o 'saltar'. Con mayoría estricta, el más votado queda expulsado sin revelar su rol.",
+        "Si el expulsado es el CEO, la partida termina como si la asamblea lo hubiera despedido.",
+        "Como mucho 3 reuniones por partida (cuerpos y botón de emergencia cuentan juntos)."
       ]
     },
     "phase_2_confrontation": {
@@ -231,15 +869,27 @@
       "rules": [
         "Todos los jugadores se sientan en la mesa de la Sala de Juntas.",
         "Cada participante puede exponer hasta 2 evidencias obtenidas de su inventario.",
-        "Fase de alegatos: El Inversor interroga a los sospechosos cara a cara.",
+        "Fase de alegatos: El Inversor interroga a los sospechosos cara a cara contrastando pruebas.",
         "Votación ejecutiva: Se vota quién es despedido y denunciado ante la fiscalía corporativa."
       ]
     },
     "victory_resolution": {
-      "ceo_victory": "Si el CTO es despedido o los logs y el contrato fueron destruidos con éxito.",
-      "cto_victory": "Si el CTO presenta el dump de logs y la foto de la laptop, logrando que el Inversor despida al CEO.",
-      "investor_victory": "Si el Inversor vota al CEO y rescata el Pendrive con las llaves criptográficas.",
-      "leaker_victory": "Si el Leaker cobra el rescate del CEO o vende los secretos al Inversor al mejor precio sin ser descubierto."
+      "ceo_master_fraud": "El Golpe Maestro del CEO: Si el CTO es despedido injustamente o los logs del servidor y el contrato fantasma son destruidos con éxito. El CEO escapa impune con los 1.8M y cierra la Serie B. Ganan con él el Abogado y la Directora Financiera.",
+      "cto_forensic_acquittal": "Absolución Forense del CTO: Si el CTO presenta el dump de logs y la foto de la laptop, logrando que el Inversor despida al CEO y limpie su nombre.",
+      "investor_capital_recovery": "El Rescate del Capital del Inversor: Si el Inversor vota al CEO y rescata el Pendrive con las llaves de la billetera fría antes del amanecer.",
+      "leaker_extortion_escape": "El Escape Perfecto del Filtrador: Si el Leaker asegura el Pendrive sin ser acusado, cobrando el rescate o huyendo al anonimato como criptomillonario.",
+      "cto_leadership_coup": "Golpe de Timón Técnico: Si el CTO prueba que su clúster estaba en pausa y expone la MAC de Presidencia, el Inversor lo nombra nuevo CEO interino de NexusCore.",
+      "press_media_bombshell": "Bomba Mediática en TechCrunch: Si el Filtrador expone los chats de Slack y la grabadora espía, detonando un escándalo público internacional que tumba la cotización.",
+      "federal_sec_raid": "Allanamiento Federal de la SEC: Si se exponen las facturas ficticias de Delaware y las deudas de casino, la fiscalía allana la oficina y congela la empresa.",
+      "corporate_coverup": "El Chivo Expiatorio: Si la asamblea culpa al Filtrador o al inocente por falta de pruebas, la dirección pacta una tapadera corporativa en la sombra.",
+      "scorched_earth_chaos": "Tierra Quemada Digital: Si las grabaciones de seguridad y los logs del servidor son borrados, el caso termina sin resolver y la startup colapsa.",
+      "absolute_justice_checkmate": "Jaque Mate Absoluto: Si se prueba la clonación de la tarjeta con torniquetes y video de CCTV y el Inversor retiene el Pendrive, victoria indiscutible de la verdad.",
+      "employee_collective_triumph": "Rebelión Sindical de los Desarrolladores: Si la plantilla presenta las facturas falsas y los audios de la mesa, desmantelan la cúpula corrupta y toman el control corporativo.",
+      "accomplice_victory": "El Abogado gana con el CEO.",
+      "cfo_victory": "La Directora Financiera gana con el CEO.",
+      "security_victory": "El Jefe de Seguridad gana con la plantilla si se despide a un culpable.",
+      "journalist_victory": "Exclusiva: la Periodista termina con 3 o más pruebas distintas y nadie la acusa.",
+      "silencio_total": "Si los culpables en pie igualan o superan al resto (los noqueados cuentan en pie), ganan el CEO y sus cómplices en el acto."
     }
   }
 }

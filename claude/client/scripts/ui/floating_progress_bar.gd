@@ -141,6 +141,13 @@ func _update_bar() -> void:
 func _set_color(c: Color) -> void:
 	progress_bar.add_theme_stylebox_override("fill", UiPalette.flat(c, Color.TRANSPARENT, 0, 3, 0))
 
+## Posición del personaje (no la del ancla sobre su cabeza, que se recoloca sola al
+## cambiar el rótulo del nombre y cortaba la acción sin que el jugador se moviera).
 func _owner_position() -> Vector2:
 	var p := get_parent()
+	var n := p
+	while n != null and not n is CharacterBody2D:
+		n = n.get_parent()
+	if n is Node2D:
+		return n.global_position
 	return p.global_position if p is Node2D else Vector2.ZERO

@@ -26,6 +26,7 @@ func _sync(s: Dictionary) -> void:
 		var node: Player = _players.get(p["id"])
 		if node == null:
 			node = _spawn(p)
+		node.apply_status(p)
 		node.set_connected(p.get("connected", true))
 	for id in _players.keys():
 		if not seen.has(id):
@@ -38,8 +39,11 @@ func _spawn(p: Dictionary) -> Player:
 	node.player_id = p["id"]
 	node.is_local = p["id"] == GameState.local_player_id()
 	node.display_name = p.get("name", "?")
-	# Skin de animal que reparte el servidor (pública, no depende del rol).
-	node.skin_id = str(p.get("skinId", SkinCatalog.fallback_for(p["id"])))
+	# Skin de animal: por defecto el pingüino 3D para el jugador local
+	var skin_chosen := str(p.get("skinId", ""))
+	if skin_chosen == "":
+		skin_chosen = "pinguino" if node.is_local else SkinCatalog.fallback_for(p["id"])
+	node.skin_id = skin_chosen
 	node.teleport(Protocol.vec2_from(p["position"]))
 	# La escena ya usa la capa 2 con máscara 1: los jugadores no chocan entre sí (solo con
 	# el mapa), porque si se empujaran, juntarse en una pista interrumpiría las canalizaciones.

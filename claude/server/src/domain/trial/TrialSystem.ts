@@ -112,6 +112,12 @@ export class TrialSystem {
     return { optionId, label, tally, accused: this.accusedBy(optionId) };
   }
 
+  /** Veredicto impuesto sin votación (p. ej. el CEO expulsado en una emergencia = "despedir_ceo"). */
+  forcedVerdict(optionId: string, tally: Record<string, number> = {}): Verdict {
+    const label = this.options().find((o) => o.id === optionId)?.label ?? optionId;
+    return { optionId, label, tally, accused: this.accusedBy(optionId) };
+  }
+
   private accusedBy(optionId: string): PlayerId[] {
     if (optionId.startsWith(ACCUSE_PREFIX)) return [optionId.slice(ACCUSE_PREFIX.length)];
     const role = this.config.options.find((o) => o.id === optionId)?.accuses_role;

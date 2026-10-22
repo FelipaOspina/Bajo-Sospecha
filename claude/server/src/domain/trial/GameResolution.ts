@@ -43,7 +43,9 @@ export class GameResolution {
       return role && (e.winners.roles?.includes(role.id) || e.winners.teams?.includes(role.team));
     }).map((p) => p.id);
     // Un final solo cuenta si se cumple y alguien de la sala lo gana (p. ej. sin Empleados no hay final de Empleados).
-    const matched = this.endings.filter((e) => this.conditions.evaluate(e.when, context) && winnersOf(e).length > 0);
+    // Con un final forzado (la partida acabó en el acto) solo cuentan los finales "forced".
+    const candidates = context.forcedEnding ? this.endings.filter((e) => 'forced' in (e.when ?? {})) : this.endings;
+    const matched = candidates.filter((e) => this.conditions.evaluate(e.when, context) && winnersOf(e).length > 0);
     const winners = new Set<PlayerId>();
     if (this.endings.length) {
       matched.forEach((e) => winnersOf(e).forEach((p) => winners.add(p)));

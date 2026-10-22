@@ -21,6 +21,10 @@ const ROLE_COLORS := {
 	"ROLE_INVESTOR": AMBER,
 	"ROLE_LEAKER": Color("#B48CFF"),     # violeta
 	"ROLE_EMPLOYEE": Color("#4ADE80"),   # verde
+	"ROLE_SECURITY": Color("#38BDF8"),   # azul
+	"ROLE_ACCOMPLICE": Color("#F97316"), # naranja
+	"ROLE_CFO": Color("#F472B6"),        # rosa
+	"ROLE_JOURNALIST": Color("#FACC15"), # amarillo
 }
 const NEUTRAL_SUIT := Color("#8A94A8")   # rol sin color asignado
 

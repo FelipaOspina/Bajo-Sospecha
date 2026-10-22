@@ -550,6 +550,9 @@ void paint_face(vec2 h, float px, inout vec3 col, inout float gloss, inout vec3 
 	} else if (patches == 3) {
 		float d = smin(min(sd_ellipse(f - vec2(-8.6 * kx, 1.0), vec2(12.0, 13.0)), sd_ellipse(f - vec2(8.6 * kx, 1.0), vec2(12.0, 13.0))), sd_ellipse(f - vec2(0.0, 9.5), vec2(16.0, 10.0)), 3.0);
 		col = mix(col, fl, cov(d, max(px, 0.5)));
+		// Mejillas sonrosadas (pink blush) tiernas del pingüino
+		float blush = min(sd_circle(f - vec2(-12.5 * kx, 7.5), 4.2), sd_circle(f - vec2(12.5 * kx, 7.5), 4.2));
+		col = mix(col, vec3(0.98, 0.60, 0.65), cov(blush, max(px, 1.2)) * 0.70);
 	}
 	if (beak && patches != 3) {
 		float d = min(sd_circle(f - vec2(-10.0 * kx, 0.5), 10.8), sd_circle(f - vec2(10.0 * kx, 0.5), 10.8));

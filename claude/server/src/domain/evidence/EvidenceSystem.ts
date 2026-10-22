@@ -19,6 +19,7 @@ import type {
   EvidenceMapConfig,
   IWorldQuery,
   PlayerId,
+  Vec2,
 } from './types.js';
 
 export interface EvidenceSystemDeps {
@@ -219,6 +220,49 @@ export class EvidenceSystem {
     }
   }
 
+  /** Añade un objeto al mapa en plena partida (p. ej. los objetos caídos de un jugador). */
+  addInteractable(interactable: IInteractable): void {
+    this.deps.interactables.add(interactable);
+  }
+
+  /** Todo el inventario del jugador pasa a `target` (silenciado o expulsado). */
+  moveInventoryTo(playerId: PlayerId, target: IEvidenceDropTarget): void {
+    for (const id of [...this.deps.inventories.of(playerId).items()]) {
+      if (!target.canAccept(id)) continue;
+      this.deps.inventories.of(playerId).remove(id);
+      target.put(id);
+      this.moveTo(this.instances.get(id)!, { kind: 'world', interactableId: target.id }, playerId, 'dropped');
+      this.deps.events.emit('evidence.dropped', { playerId, interactableId: target.id, instanceId: id });
+    }
+  }
+
+  /**
+   * Misión fantasma: reaparece una copia ("Copia recuperada") de una pista destruida en su sitio
+   * original (spawn_<id>), si ese sitio está libre y no queda ninguna otra instancia viva de ella.
+   * Elige la más cercana a `near`. null si no hay ninguna.
+   */
+  restoreDestroyed(near: Vec2, playerId: PlayerId): { instance: EvidenceInstance; interactable: IInteractable } | null {
+    const alive = new Set([...this.instances.values()].filter((i) => i.location.kind !== 'destroyed').map((i) => i.definitionId));
+    const candidates = [...this.instances.values()]
+      .filter((i) => i.location.kind === 'destroyed' && !alive.has(i.definitionId))
+      .map((i) => ({ inst: i, spot: this.deps.interactables.get(`spawn_${i.definitionId}`) }))
+      .filter((c): c is { inst: EvidenceInstance; spot: IInteractable & IEvidenceDropTarget } =>
+        !!c.spot && isDropTarget(c.spot) && c.spot.canAccept(''))
+      .sort((a, b) => Math.hypot(a.spot.position.x - near.x, a.spot.position.y - near.y) - Math.hypot(b.spot.position.x - near.x, b.spot.position.y - near.y));
+    const pick = candidates[0];
+    if (!pick) return null;
+    const copy: EvidenceInstance = {
+      instanceId: this.deps.newId?.() ?? `ev_${++this.seq}`,
+      definitionId: pick.inst.definitionId,
+      location: { kind: 'world', interactableId: pick.spot.id },
+      history: [{ playerId, action: 'copied', at: this.deps.world.now() }],
+      copyOf: pick.inst.instanceId,
+    };
+    this.instances.set(copy.instanceId, copy);
+    pick.spot.put(copy.instanceId);
+    return { instance: copy, interactable: pick.spot };
+  }
+
   // ───── Consultas ─────
 
   getInstance(instanceId: string) { return this.instances.get(instanceId); }
@@ -249,6 +293,18 @@ export class EvidenceSystem {
     return [...this.instances.values()]
       .filter((i) => i.definitionId === definitionId && i.location.kind === 'inventory')
       .map((i) => (i.location as { playerId: PlayerId }).playerId);
+  }
+
+  /** Roles a los que incrimina una pista (campo incriminates del caso). */
+  catalogIncriminates(definitionId: string): string[] {
+    return this.deps.catalog.get(definitionId)?.incriminates ?? [];
+  }
+
+  /** Definiciones de las que este jugador ha sacado copia (dump, foto), aunque ya no la lleve. */
+  copiedBy(playerId: PlayerId): string[] {
+    return [...this.instances.values()]
+      .filter((i) => i.copyOf && i.history[0]?.action === 'copied' && i.history[0].playerId === playerId)
+      .map((i) => i.definitionId);
   }
 
   catalogName(definitionId: string): string {

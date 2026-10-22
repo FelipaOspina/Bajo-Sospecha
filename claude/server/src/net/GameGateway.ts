@@ -1,8 +1,8 @@
 import type { ClientIntent, PlayerId, Resolution, ServerMessage } from '../../../shared/protocol/protocol.js';
 import type { ProfileService } from '../domain/profile/ProfileService.js';
-import type { PlayerProfile } from '../domain/profile/types.js';
+import type { MatchActivity, PlayerProfile } from '../domain/profile/types.js';
 import type { Result } from '../core/Result.js';
-import { Matchmaker } from './Matchmaker.js';
+import { Matchmaker, type MatchmakerOptions } from './Matchmaker.js';
 import type { IClientTransport, Room } from './Room.js';
 import { RoomDirectory } from './RoomDirectory.js';
 
@@ -21,7 +21,7 @@ const MAX_NAME = 24;
  * Puerta de entrada independiente del transporte (WsServer solo le pasa mensajes):
  *  - menú: hello (perfil), Executive Pass, tienda de cosméticos, ponérselos y animal preferido;
  *  - salas privadas: create_room (código de 6) y join_room;
- *  - matchmaking público: queue_match / leave_queue (grupos de MATCH_SIZE);
+ *  - matchmaking público: queue_match / leave_queue (de MATCH_MIN a MATCH_MAX, con cuenta atrás);
  *  - dentro de una sala, el resto de intenciones van a Room;
  *  - al terminar una partida, reparte XP y monedas a los perfiles.
  */
@@ -32,8 +32,16 @@ export class GameGateway implements IClientTransport {
   readonly matchmaker: Matchmaker<PlayerId>;
   private directory!: RoomDirectory;
 
-  constructor(private readonly profiles?: ProfileService, matchSize = 4) {
-    this.matchmaker = new Matchmaker<PlayerId>(matchSize);
+  constructor(private readonly profiles?: ProfileService, matchmaking: Partial<MatchmakerOptions> | number = {}) {
+    this.matchmaker = new Matchmaker<PlayerId>(matchmaking);
+  }
+
+  /** Llamar periódicamente (junto al tick de las salas): arranca la cola al vencer la cuenta atrás. */
+  tick(): void {
+    const group = this.matchmaker.tick();
+    if (!group) return;
+    this.startMatch(group);
+    this.broadcastQueue();
   }
 
   attach(directory: RoomDirectory) { this.directory = directory; }
@@ -70,6 +78,7 @@ export class GameGateway implements IClientTransport {
       case 'leave_room': return this.reply(c, intent.seq, this.leaveRoom(c));
       case 'claim_pass_reward': return this.profileAction(c, intent.seq, (p) => this.profiles!.claim(p, intent.level, intent.track));
       case 'buy_skin': return this.profileAction(c, intent.seq, (p) => this.profiles!.buySkin(p, intent.skinId));
+      case 'claim_tutorial_reward': return this.claimTutorial(c, intent.seq);
       case 'buy_premium_pass': return this.profileAction(c, intent.seq, (p) => this.profiles!.buyPremium(p));
       case 'select_skin': return this.profileAction(c, intent.seq, (p) => this.profiles!.selectSkin(p, intent.skinId));
       case 'buy_cosmetic': return this.profileAction(c, intent.seq, (p) => this.profiles!.buyCosmetic(p, intent.cosmeticId));
@@ -104,13 +113,28 @@ export class GameGateway implements IClientTransport {
     if (this.profiles && c.profile) c.send({ t: 'profile', profile: this.profiles.view(c.profile) });
   }
 
-  /** Room.onResolved: XP y monedas para cada perfil que jugó (gane o pierda). */
-  rewardMatch(resolution: Resolution): void {
+  /** Tutorial local terminado: su recompensa, una sola vez por perfil (already_claimed después). */
+  private claimTutorial(c: Connection, seq: number): void {
+    if (!this.profiles || !c.profile) { c.send({ t: 'rejected', seq, reason: 'no_profile' }); return; }
+    const r = this.profiles.completeTutorial(c.profile);
+    this.reply(c, seq, r);
+    if (!r.ok) return;
+    c.send({ t: 'rewards', rewards: r.value });
+    this.sendProfile(c);
+  }
+
+  /**
+   * Room.onResolved: XP y monedas para cada perfil que jugó (gane o pierda), y los retos de la
+   * Ruta del Detective con lo que hizo en la partida (activity). Solo se le cuenta a él.
+   */
+  rewardMatch(resolution: Resolution, activity: ReadonlyMap<PlayerId, MatchActivity> = new Map()): void {
     if (!this.profiles) return;
     for (const p of resolution.players) {
       const profile = this.profileOf.get(p.id);
       if (!profile) continue;
-      const rewards = this.profiles.grantMatch(profile, { won: p.won, objectivesCompleted: p.objectives.filter((o) => o.completed).length });
+      const rewards = this.profiles.grantMatch(profile, {
+        won: p.won, objectivesCompleted: p.objectives.filter((o) => o.completed).length, activity: activity.get(p.id),
+      });
       const c = this.conns.get(p.id);
       if (c) {
         c.send({ t: 'rewards', rewards });
@@ -175,35 +199,43 @@ export class GameGateway implements IClientTransport {
   private queue(c: Connection): Result<null> {
     if (c.room) return { ok: false, error: 'already_in_room' };
     const group = this.matchmaker.enqueue(c.id);
-    if (group) {
-      let room: Room;
-      try {
-        room = this.directory.create('public');
-      } catch (e) {
-        for (const id of group) this.matchmaker.enqueue(id);   // vuelven a la cola
-        return { ok: false, error: (e as Error).message };
-      }
-      for (const id of group) {
-        const member = this.conns.get(id);
-        if (!member) continue;
-        member.send({ t: 'queued', position: 0, waiting: 0, matchSize: this.matchmaker.matchSize });
-        this.enter(member, room);
-      }
-    }
+    const r = group ? this.startMatch(group) : { ok: true as const, value: null };
     this.broadcastQueue();
+    return r;
+  }
+
+  /** Crea la sala pública del grupo y los mete. */
+  private startMatch(group: PlayerId[]): Result<null> {
+    let room: Room;
+    try {
+      room = this.directory.create('public');
+    } catch (e) {
+      for (const id of group) this.matchmaker.enqueue(id);   // vuelven a la cola
+      return { ok: false, error: (e as Error).message };
+    }
+    for (const id of group) {
+      const member = this.conns.get(id);
+      if (!member) continue;
+      member.send(this.queuedMsg(0, 0));
+      this.enter(member, room);
+    }
     return { ok: true, value: null };
+  }
+
+  private queuedMsg(position: number, waiting: number): ServerMessage {
+    return { t: 'queued', position, waiting, matchSize: this.matchmaker.matchSize, minSize: this.matchmaker.minSize, startsAt: this.matchmaker.startsAt };
   }
 
   private leaveQueue(c: Connection): void {
     if (!this.matchmaker.remove(c.id)) return;
-    c.send({ t: 'queued', position: 0, waiting: this.matchmaker.waiting().length, matchSize: this.matchmaker.matchSize });
+    c.send(this.queuedMsg(0, this.matchmaker.waiting().length));
     this.broadcastQueue();
   }
 
   private broadcastQueue(): void {
     const waiting = this.matchmaker.waiting();
     waiting.forEach((id, i) =>
-      this.conns.get(id)?.send({ t: 'queued', position: i + 1, waiting: waiting.length, matchSize: this.matchmaker.matchSize }));
+      this.conns.get(id)?.send(this.queuedMsg(i + 1, waiting.length)));
   }
 
   private reply(c: Connection, seq: number, r: Result<unknown>): void {

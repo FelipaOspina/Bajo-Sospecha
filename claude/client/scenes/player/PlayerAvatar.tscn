@@ -4,8 +4,8 @@
 [ext_resource type="Script" path="res://scripts/ProceduralChibiAvatar.gd" id="2"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_feet"]
-radius = 6.0
-height = 26.0
+radius = 12.0
+height = 40.0
 
 [node name="PlayerAvatar" type="CharacterBody2D"]
 collision_layer = 2
@@ -50,5 +50,13 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 12
 text = "Jugador"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CrownLabel" type="Label" parent="OverheadLayer"]
+offset_right = 30.0
+offset_bottom = 20.0
+theme_override_font_sizes/font_size = 15
+text = "👑"
 horizontal_alignment = 1
 vertical_alignment = 1

@@ -5,3 +5,4 @@ client/data/roles/
 client/data/evidence/
 *.log
 client/data/scenarios/
+export/

@@ -3,8 +3,9 @@ import { fail, ok, type Result } from '../../core/Result.js';
 import type { ProfileStore } from './ProfileStore.js';
 import { COSMETIC_SLOTS, type CosmeticSlot, type ICosmeticCatalog } from '../cosmetics/CosmeticCatalog.js';
 import type {
-  Currency, MatchResult, MatchRewards, PassReward, PassTrack, PlayerProfile, Price, ProgressionConfig,
+  ChallengeReward, Currency, LevelReward, MatchResult, MatchRewards, PassReward, PassTrack, PathProgress, PlayerProfile, Price, ProgressionConfig,
 } from './types.js';
+import { emptyActivity, levelProgress, pathLevels, statValue } from './DetectivePath.js';
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 
@@ -49,6 +50,7 @@ export class ProfileService {
       cosmetics: this.starterCosmetics(),
       equipped: {},
       stats: { played: 0, won: 0 },
+      path: ProfileService.freshPath(),
       createdAt: this.now(),
       updatedAt: this.now(),
     };
@@ -58,11 +60,23 @@ export class ProfileService {
 
   /** Perfiles anteriores a la economía actual: reciben todos los animales y los cosméticos de inicio. */
   private migrate(p: PlayerProfile): boolean {
-    const before = JSON.stringify([p.skins, p.cosmetics, p.equipped]);
+    const before = JSON.stringify([p.skins, p.cosmetics, p.equipped, p.path, p.coins]);
     p.skins = [...new Set([...(p.skins ?? []), ...this.starterSkins()])];
     p.cosmetics = [...new Set([...(p.cosmetics ?? []), ...this.starterCosmetics()])];
     p.equipped ??= {};
-    return JSON.stringify([p.skins, p.cosmetics, p.equipped]) !== before;
+    p.path = { ...ProfileService.freshPath(), ...(p.path ?? {}) };
+    // Perfiles con XP de antes de la Ruta: reciben las recompensas de los niveles que ya tienen.
+    this.settleLevelRewards(p);
+    return JSON.stringify([p.skins, p.cosmetics, p.equipped, p.path, p.coins]) !== before;
+  }
+
+  static freshPath(): PathProgress {
+    return { tutorialDone: false, done: [], progress: {}, rewarded: [1] };
+  }
+
+  private pathOf(p: PlayerProfile): PathProgress {
+    p.path ??= ProfileService.freshPath();
+    return p.path;
   }
 
   private starterSkins(): string[] {
@@ -75,8 +89,9 @@ export class ProfileService {
 
   // ───── Niveles ─────
 
+  /** Nivel del perfil con la curva creciente (profile_level_curve; sin ella, lineal). */
   level(xp: number): number {
-    return 1 + Math.floor(xp / this.config.profile_xp_per_level);
+    return levelProgress(xp, this.config).level;
   }
 
   passLevel(passXp: number): number {
@@ -182,36 +197,124 @@ export class ProfileService {
     return ok(null);
   }
 
-  /** Al terminar una partida: XP para el perfil y para el pase, y monedas. */
+  /**
+   * Al terminar una partida: XP para el perfil y para el pase, monedas, retos de la Ruta del
+   * Detective cumplidos (con lo que contó Room de esta partida) y recompensas de nivel.
+   * Los retos activos son los de los niveles que ya tenías al empezar la partida.
+   */
   grantMatch(p: PlayerProfile, result: MatchResult): MatchRewards {
     const r = this.config.match_rewards;
-    const xp = r.xp_played + (result.won ? r.xp_win : 0) + r.xp_per_objective * Math.max(0, result.objectivesCompleted);
-    const coins = r.coins_played + (result.won ? r.coins_win : 0);
+    const matchXp = r.xp_played + (result.won ? r.xp_win : 0) + r.xp_per_objective * Math.max(0, result.objectivesCompleted);
+    const matchCoins = r.coins_played + (result.won ? r.coins_win : 0);
     const levelBefore = this.level(p.xp);
     const passBefore = this.passLevel(p.pass.xp);
+    const challenges = this.evaluateChallenges(p, levelBefore, result);
+    const xp = matchXp + challenges.reduce((a, c) => a + c.xp, 0);
+    const coinsBefore = p.coins;
     p.xp += xp;
     p.pass.xp += xp;
-    p.coins += coins;
+    p.coins += matchCoins + challenges.reduce((a, c) => a + c.coins, 0);
     p.stats.played += 1;
     if (result.won) p.stats.won += 1;
+    const levelRewards = this.settleLevelRewards(p);
     this.save(p);
+    const level = this.level(p.xp);
     return {
-      xp, coins, won: result.won,
-      levelsGained: this.level(p.xp) - levelBefore,
+      source: 'match',
+      xp, matchXp, coins: p.coins - coinsBefore, won: result.won,
+      levelsGained: level - levelBefore,
       passLevelsGained: this.passLevel(p.pass.xp) - passBefore,
+      levelBefore, level, challenges, levelRewards,
     };
+  }
+
+  /** Marca los retos cumplidos en esta partida y devuelve los nuevos (con su XP y monedas). */
+  private evaluateChallenges(p: PlayerProfile, level: number, result: MatchResult): ChallengeReward[] {
+    const path = this.pathOf(p);
+    const activity = result.activity ?? emptyActivity();
+    const out: ChallengeReward[] = [];
+    for (const l of pathLevels(this.config)) {
+      const c = l.challenge;
+      if (!c || l.level > level || path.done.includes(c.id) || c.stat === 'tutorial') continue;
+      const value = statValue(c.stat, activity, result);
+      let reached: boolean;
+      if (c.scope === 'total') {
+        const total = (path.progress[c.id] ?? 0) + value;
+        reached = total >= c.target;
+        if (reached) delete path.progress[c.id];
+        else if (value > 0) path.progress[c.id] = total;
+      } else {
+        reached = value >= c.target;
+      }
+      if (!reached) continue;
+      path.done.push(c.id);
+      out.push({ id: c.id, text: c.text, level: l.level, xp: c.xp, coins: c.coins ?? 0 });
+    }
+    return out;
+  }
+
+  /** Recompensas (monedas o cosméticos) de los niveles de la Ruta alcanzados y aún sin entregar. */
+  private settleLevelRewards(p: PlayerProfile): LevelReward[] {
+    const path = this.pathOf(p);
+    const level = this.level(p.xp);
+    const out: LevelReward[] = [];
+    for (const l of pathLevels(this.config)) {
+      if (l.level > level || path.rewarded.includes(l.level)) continue;
+      path.rewarded.push(l.level);
+      if (!l.reward) continue;
+      const given: LevelReward = { level: l.level };
+      if (l.reward.coins) { p.coins += l.reward.coins; given.coins = l.reward.coins; }
+      if (l.reward.cosmetic && this.cosmetics.has(l.reward.cosmetic)) {
+        if (!p.cosmetics.includes(l.reward.cosmetic)) p.cosmetics.push(l.reward.cosmetic);
+        given.cosmetic = l.reward.cosmetic;
+      }
+      if (given.coins || given.cosmetic) out.push(given);
+    }
+    return out;
+  }
+
+  /**
+   * Tutorial «Primer día en NexusCore» (práctica local): su recompensa se entrega una sola vez
+   * por perfil. Cuenta como el reto del nivel 1 de la Ruta.
+   */
+  completeTutorial(p: PlayerProfile): Result<MatchRewards> {
+    const path = this.pathOf(p);
+    if (path.tutorialDone) return fail('already_claimed');
+    const reward = this.config.detective_path?.tutorial_reward ?? { xp: 0, coins: 0 };
+    const levelBefore = this.level(p.xp);
+    const passBefore = this.passLevel(p.pass.xp);
+    const coinsBefore = p.coins;
+    path.tutorialDone = true;
+    const first = pathLevels(this.config).find((l) => l.challenge?.stat === 'tutorial');
+    const challenges: ChallengeReward[] = [];
+    if (first?.challenge && !path.done.includes(first.challenge.id)) {
+      path.done.push(first.challenge.id);
+      challenges.push({ id: first.challenge.id, text: first.challenge.text, level: first.level, xp: reward.xp, coins: reward.coins });
+    }
+    p.xp += reward.xp;
+    p.pass.xp += reward.xp;
+    p.coins += reward.coins;
+    const levelRewards = this.settleLevelRewards(p);
+    this.save(p);
+    const level = this.level(p.xp);
+    return ok({
+      source: 'tutorial', xp: reward.xp, matchXp: 0, coins: p.coins - coinsBefore, won: false,
+      levelsGained: level - levelBefore, passLevelsGained: this.passLevel(p.pass.xp) - passBefore,
+      levelBefore, level, challenges, levelRewards,
+    });
   }
 
   /** Lo que se envía al cliente: el perfil y los valores derivados para pintar barras. */
   view(p: PlayerProfile) {
     const bp = this.config.battle_pass;
-    const level = this.level(p.xp);
+    const progress = levelProgress(p.xp, this.config);
     const passLevel = this.passLevel(p.pass.xp);
     return {
       ...structuredClone(p),
-      level,
-      xpIntoLevel: p.xp - (level - 1) * this.config.profile_xp_per_level,
-      xpForLevel: this.config.profile_xp_per_level,
+      path: structuredClone(this.pathOf(p)),
+      level: progress.level,
+      xpIntoLevel: progress.into,
+      xpForLevel: progress.need,
       pass: {
         ...structuredClone(p.pass),
         name: bp.name,

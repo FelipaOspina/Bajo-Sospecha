@@ -29,7 +29,10 @@ export interface TrialConfig {
  *   { "revealed_count": { "tags": [...], "min": 2 } }
  *   { "destroyed_all": [...] } / { "destroyed_any": [...] }
  *   { "held_by_role": { "role": "ROLE_X", "evidence": "CLUE_Y" } }
+ *   { "held_count": { "role": "ROLE_X", "min": 3 } }  quien tiene ese rol lleva al menos N pruebas distintas
  *   { "accused_role": "ROLE_X" }                el veredicto acusa a quien tiene ese rol
+ *   { "forced": "silencio_total" }            la partida terminó en el acto con ese final
+ *                                               (solo se evalúan finales "forced" en ese caso)
  *   { "all": [cond, ...] } / { "any": [cond, ...] } / { "not": cond }
  */
 export type Condition = Record<string, unknown>;
@@ -51,4 +54,8 @@ export interface ResolutionContext {
   revealedTags: readonly string[][];
   destroyed: ReadonlySet<string>;         // ids de definición destruidos
   holdersOf(definitionId: string): PlayerId[];
+  /** Ids de definición distintos que llevan al final los jugadores con ese rol. */
+  heldByRole?(roleId: string): string[];
+  /** Final forzado en plena partida (p. ej. "silencio_total"); null/ausente si se llegó al juicio. */
+  forcedEnding?: string | null;
 }

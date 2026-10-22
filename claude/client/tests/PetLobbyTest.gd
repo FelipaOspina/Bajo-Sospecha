@@ -24,26 +24,29 @@ func _ready() -> void:
 	if seat == null:
 		_finish()
 		return
-	var skin := seat.chibi.skin_id
+	var skin := seat.skin_id
 	var panel := view.pet_panel
 	_check(panel != null and panel.is_visible_in_tree(), "la barra de la mascota está en la sala")
 	_check(panel.title.text == str(SkinCatalog.skin(skin)["name"]), "con el nombre de tu animal (%s)" % panel.title.text)
 	_check(panel.feed_label.text == str(PetCare.food(skin)["name"]), "y el botón de su comida: %s" % panel.feed_label.text)
-	_check(not seat.chibi.bake, "tu mascota se dibuja en vivo (pone caras)")
+	_check(seat.model is PlushAvatar3D and seat.model.skin_id == skin and seat.chibi == seat.model, "tu mascota es su personaje 3D (%s)" % seat.model.skin_id)
+	_check(stage.get_node("Lounge3D") is SubViewport and stage.find_children("*", "SubViewport", true, false).size() == 1, "toda la sala va en un solo SubViewport")
 	_check(not panel.get_global_rect().intersects(view.chat_lines.get_parent().get_parent().get_parent().get_global_rect()), "la barra no tapa el chat")
 	_check(not panel.get_global_rect().intersects(view.start_button.get_global_rect()), "ni el botón grande")
 
 	# Tocar.
-	var center := stage.get_global_transform() * (seat.transform * Vector2(0, seat.chibi.top_y() * 0.5))
+	var hit := seat.hit_rect()
+	_check(hit.size.x > 40.0 and hit.size.y > 60.0 and Rect2(Vector2.ZERO, stage.size).encloses(hit), "tu animal se ve entero en la sala (%s)" % str(hit))
+	var center := stage.get_global_transform() * hit.get_center()
 	_click(center)
 	await _frames(2)
 	_check(_gestures == [["tap", skin]], "un toque sobre tu animal cuenta como tocarlo (%s)" % str(_gestures))
 	_check(seat.reaction == PetCare.tap_reaction(skin), "y reacciona a su manera: %s" % seat.reaction)
 	_check(view.pet_sfx.last_played == skin + "_feliz", "con su sonido (%s)" % view.pet_sfx.last_played)
 	await _seconds(0.35)
-	_check(seat.chibi.transform != Transform2D.IDENTITY or not seat.chibi.emote.is_empty(), "se mueve o pone cara")
+	_check(seat.model.is_reacting() and not seat.model.rig_transform().is_equal_approx(Transform3D.IDENTITY), "se mueve en 3D")
 	await _seconds(PetReactions.duration(seat.reaction) + 0.2)
-	_check(seat.reaction == "" and seat.chibi.transform.is_equal_approx(Transform2D.IDENTITY), "y vuelve a su sitio")
+	_check(seat.reaction == "" and not seat.model.is_reacting() and seat.model.rig_transform().is_equal_approx(Transform3D.IDENTITY), "y vuelve a su sitio")
 
 	# Acariciar (arrastrar por encima).
 	_gestures.clear()
@@ -56,13 +59,13 @@ func _ready() -> void:
 	_check(seat.reaction == "cuddle", "se arrima con gusto")
 	_check(view.pet_sfx.last_played == skin + "_caricia", "y suena su caricia (%s)" % view.pet_sfx.last_played)
 	await _seconds(0.3)
-	_check(float(seat.chibi.pose_state()["smile"]) > 0.5, "cierra los ojos de gusto")
-	_check(seat.get_children().any(func(c): return c.get_class() == "Node2D" and c.get_script() != null and c != seat.chibi and c.name.begins_with("@")), "salen corazones")
+	_check(seat.model.happy_amount() > 0.5, "cierra los ojos de gusto")
+	_check(seat.get_children().any(func(c): return c.get_class() == "Node2D" and c.get_script() != null and c.name.begins_with("@")), "salen corazones")
 	await _seconds(1.3)
 
 	# Tocar fuera no hace nada.
 	_gestures.clear()
-	_click(stage.get_global_transform() * (seat.transform * Vector2(-90, -20)))
+	_click(stage.get_global_transform() * Vector2(hit.position.x - 40.0, hit.end.y - 10.0))
 	await _frames(2)
 	_check(_gestures.is_empty(), "tocar el suelo no cuenta")
 

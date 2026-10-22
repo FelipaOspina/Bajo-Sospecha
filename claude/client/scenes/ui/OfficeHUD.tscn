@@ -1,51 +1,53 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/office_hud.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/ui/circular_minimap.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/ui/VirtualJoystick.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/ui/SprintButton.gd" id="4"]
 
 [node name="OfficeHUD" type="CanvasLayer"]
 layer = 6
 script = ExtResource("1")
 
 [node name="TasksPanel" type="PanelContainer" parent="."]
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 280.0
-offset_bottom = 120.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 296.0
+offset_bottom = 216.0
 mouse_filter = 2
 
 [node name="TasksLayout" type="VBoxContainer" parent="TasksPanel"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="TasksTitle" type="Label" parent="TasksPanel/TasksLayout"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "Tareas"
 
 [node name="TitleRule" type="ColorRect" parent="TasksPanel/TasksLayout"]
 custom_minimum_size = Vector2(0, 1)
 layout_mode = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 0.12)
+color = Color(1, 1, 1, 0.14)
 
 [node name="TaskList" type="VBoxContainer" parent="TasksPanel/TasksLayout"]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
 [node name="MinimapFrame" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -196.0
-offset_top = 16.0
-offset_right = -16.0
-offset_bottom = 196.0
+offset_left = -190.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 190.0
 grow_horizontal = 0
 mouse_filter = 2
 
@@ -59,3 +61,43 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2")
+
+[node name="SettingsButton" type="Button" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -245.0
+offset_top = 20.0
+offset_right = -205.0
+offset_bottom = 56.0
+grow_horizontal = 0
+focus_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "⚙"
+
+[node name="VirtualJoystick" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = -185.0
+offset_right = 185.0
+offset_bottom = -32.0
+grow_vertical = 0
+script = ExtResource("3")
+
+[node name="SprintButton" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -160.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("4")

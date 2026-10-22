@@ -78,6 +78,10 @@ func can_present(instance_id: String) -> bool:
 func why_not_present(instance_id: String) -> String:
 	if not trial.is_active():
 		return TrialSystem.REASON_TEXT["wrong_phase"]
+	if trial.was_knocked():
+		return TrialSystem.REASON_TEXT["knocked_before"]
+	if GameState.is_ghost():
+		return "Los fantasmas no presentan pruebas."
 	if _on_table.has(instance_id):
 		return TrialSystem.REASON_TEXT["already_presented"]
 	if find_in_inventory(instance_id) == null:
@@ -122,12 +126,20 @@ func can_accuse() -> bool:
 ## Botón "Acusar" de una opción. Pulsar la que ya votaste retira el voto.
 func accuse(option_id) -> void:
 	if not can_accuse():
-		action_failed.emit(TrialSystem.REASON_TEXT["wrong_phase"])
+		action_failed.emit(TrialSystem.REASON_TEXT["ghost" if GameState.is_ghost() else "wrong_phase"])
 		return
 	var id = null if option_id == trial.my_vote else option_id
 	trial.vote(id)
 	if id != null:
 		accused.emit(str(id))
+
+func call_meeting() -> void:
+	if trial:
+		trial.call_meeting()
+
+func skip_to_voting() -> void:
+	if trial:
+		trial.skip_to_voting()
 
 ## Acusa al rol indicado si hay una opción que lo acusa (accuses_role del escenario).
 func accuse_role(role_id: String) -> bool:

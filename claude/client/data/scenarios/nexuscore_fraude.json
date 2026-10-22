@@ -2,15 +2,22 @@
   "format_version": 1,
   "scenario_id": "nexuscore_fraude",
   "title": "Fraude y Chantaje en la Startup Tecnológica",
-  "description": "NexusCore AI, piso 14. Noche de auditoría antes de la Serie B: alguien drenó 1,8M de dólares hacia una billetera fría anónima.",
+  "description": "NexusCore AI, piso 14 corporativo. A pocas horas de firmar una ronda Serie B de $15M con Vanguard Meridian Capital, un agujero financiero de 1.800.000 USD fue drenado de la tesorería corporativa hacia una billetera fría anónima mediante un contrato fantasma. La oficina entra en protocolo de emergencia nocturno: puertas cerradas tras los pasillos, servidores bajo sospecha y el Inversor exigiendo un culpable antes del amanecer. En este tablero de alta tensión, nadie está libre de sospecha.",
   "player_count": {
     "min": 4,
-    "max": 6
+    "max": 12
   },
   "phase_durations": {
-    "investigation": 180,
+    "investigation": 300,
+    "emergency": 75,
     "discussion": 120,
     "voting": 45
+  },
+  "emergency": {
+    "max_per_match": 3,
+    "expel_ends_game": {
+      "ROLE_CEO": "despedir_ceo"
+    }
   },
   "trial": {
     "max_presented_per_player": 2,
@@ -30,6 +37,16 @@
         "id": "despedir_filtrador",
         "label": "Despedir y denunciar al Lead Dev",
         "accuses_role": "ROLE_LEAKER"
+      },
+      {
+        "id": "despedir_abogado",
+        "label": "Despedir y denunciar al Abogado del CEO",
+        "accuses_role": "ROLE_ACCOMPLICE"
+      },
+      {
+        "id": "despedir_cfo",
+        "label": "Despedir y denunciar a la Directora Financiera",
+        "accuses_role": "ROLE_CFO"
       }
     ],
     "public_tally": true
@@ -37,8 +54,8 @@
   "endings": [
     {
       "id": "ceo_gana",
-      "title": "El CEO se sale con la suya",
-      "description": "El CTO es despedido, o los logs y el contrato desaparecen.",
+      "title": "El Golpe Maestro del CEO",
+      "description": "El CTO es destituido o los registros forenses y contratos desaparecen de la faz de la oficina. El CEO consolida el desfalco y retiene el poder.",
       "when": {
         "any": [
           {
@@ -54,14 +71,16 @@
       },
       "winners": {
         "roles": [
-          "ROLE_CEO"
+          "ROLE_CEO",
+          "ROLE_ACCOMPLICE",
+          "ROLE_CFO"
         ]
       }
     },
     {
       "id": "cto_gana",
-      "title": "El CTO limpia su nombre",
-      "description": "Los logs y la laptop se exponen en la mesa y el CEO es despedido.",
+      "title": "Absolución Forense del CTO",
+      "description": "Los logs del servidor central y la laptop de Presidencia demuestran la verdad irrefutable en la mesa. El CEO es formalmente despedido.",
       "when": {
         "all": [
           {
@@ -83,8 +102,8 @@
     },
     {
       "id": "inversor_gana",
-      "title": "El Inversor rescata su capital",
-      "description": "Despide al CEO y conserva el Pendrive con las llaves.",
+      "title": "El Rescate del Capital del Inversor",
+      "description": "El Inversor destituye al CEO culpable y retiene en su poder el Pendrive con las llaves de la billetera fría, salvando la inversión de la Serie B.",
       "when": {
         "all": [
           {
@@ -106,8 +125,8 @@
     },
     {
       "id": "filtrador_gana",
-      "title": "El Filtrador escapa con el botín",
-      "description": "Aproximación: termina con el Pendrive y sin ser despedido (la negociación no se modela todavía).",
+      "title": "El Escape Perfecto del Filtrador",
+      "description": "El Lead Dev asegura el Pendrive con las llaves privadas sin ser acusado en la votación. Desaparece en la noche convertido en criptomillonario.",
       "when": {
         "all": [
           {
@@ -131,14 +150,242 @@
     },
     {
       "id": "empleados",
-      "title": "La plantilla sobrevive",
-      "description": "El responsable del desfalco es despedido.",
+      "title": "La Plantilla Sobrevive",
+      "description": "El responsable del desfalco es despedido por la asamblea, asegurando la continuidad laboral y el salario del equipo de desarrollo.",
       "when": {
         "verdict": "despedir_ceo"
       },
       "winners": {
         "roles": [
-          "ROLE_EMPLOYEE"
+          "ROLE_EMPLOYEE",
+          "ROLE_SECURITY"
+        ]
+      }
+    },
+    {
+      "id": "cto_ascenso_liderazgo",
+      "title": "Golpe de Timón: El CTO Asume como Nuevo CEO",
+      "description": "El CTO presenta los logs de auditoría y prueba que el pipeline del clúster de IA estuvo en pausa. Con el respaldo del Inversor, es nombrado CEO interino.",
+      "when": {
+        "all": [
+          {
+            "verdict": "despedir_ceo"
+          },
+          {
+            "revealed_all": [
+              "CLUE_SERVER_LOGS",
+              "CLUE_GPU_CRON_PANEL"
+            ]
+          },
+          {
+            "not": {
+              "destroyed_any": [
+                "CLUE_SERVER_LOGS"
+              ]
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_CTO",
+          "ROLE_INVESTOR"
+        ]
+      }
+    },
+    {
+      "id": "filtrador_escandalo_prensa",
+      "title": "Bomba Mediática: Filtración a TechCrunch",
+      "description": "El Filtrador expone el chat confidencial de Slack y el audio espía grabado bajo la mesa de juntas. El escándalo internacional incendia la prensa.",
+      "when": {
+        "all": [
+          {
+            "revealed_all": [
+              "CLUE_SLACK_MESSAGE",
+              "CLUE_HIDDEN_RECORDER"
+            ]
+          },
+          {
+            "not": {
+              "accused_role": "ROLE_LEAKER"
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_LEAKER"
+        ]
+      }
+    },
+    {
+      "id": "inversion_intervenida_fiscalia",
+      "title": "Allanamiento Federal: Intervención de la SEC",
+      "description": "Las facturas ficticias de Delaware y las deudas de casino son presentadas en la asamblea. La fiscalía corporativa y los reguladores allanan NexusCore.",
+      "when": {
+        "all": [
+          {
+            "verdict": "despedir_ceo"
+          },
+          {
+            "revealed_all": [
+              "CLUE_FAKE_INVOICES",
+              "CLUE_CASINO_DEBTS"
+            ]
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_INVESTOR",
+          "ROLE_CTO"
+        ]
+      }
+    },
+    {
+      "id": "tapadera_corporativa",
+      "title": "El Chivo Expiatorio: El Filtrador Cae en la Trampa",
+      "description": "La asamblea vota expulsar al Lead Dev creyendo que operaba solo. El CEO logra desviar toda la atención pública y encubre su propio fraude.",
+      "when": {
+        "all": [
+          {
+            "verdict": "despedir_filtrador"
+          },
+          {
+            "not": {
+              "accused_role": "ROLE_CEO"
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_CEO",
+          "ROLE_ACCOMPLICE",
+          "ROLE_CFO"
+        ]
+      }
+    },
+    {
+      "id": "caos_tierra_quemada",
+      "title": "Tierra Quemada: Amnesia Digital en NexusCore",
+      "description": "Los logs de auditoría central y las grabaciones de seguridad CCTV fueron borrados por completo. Sin pruebas concluyentes, la asamblea colapsa en el caos.",
+      "when": {
+        "all": [
+          {
+            "destroyed_all": [
+              "CLUE_SERVER_LOGS",
+              "CLUE_CCTV_FOOTAGE"
+            ]
+          },
+          {
+            "not": {
+              "verdict": "despedir_ceo"
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_CEO",
+          "ROLE_ACCOMPLICE",
+          "ROLE_CFO"
+        ]
+      }
+    },
+    {
+      "id": "justicia_corporativa_completa",
+      "title": "Jaque Mate Absoluto: Caída Total de la Red de Fraude",
+      "description": "La tarjeta clonada de torniquetes y el video de CCTV desenmascaran al CEO, mientras el Inversor recupera el Pendrive. Victoria total de la justicia.",
+      "when": {
+        "all": [
+          {
+            "verdict": "despedir_ceo"
+          },
+          {
+            "revealed_all": [
+              "CLUE_ACCESS_BADGE_LOG",
+              "CLUE_CCTV_FOOTAGE"
+            ]
+          },
+          {
+            "held_by_role": {
+              "role": "ROLE_INVESTOR",
+              "evidence": "CLUE_ENCRYPTED_PENDRIVE"
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_INVESTOR",
+          "ROLE_CTO",
+          "ROLE_EMPLOYEE",
+          "ROLE_SECURITY"
+        ]
+      }
+    },
+    {
+      "id": "triunfo_colectivo_empleados",
+      "title": "Rebelión de la Plantilla: Control Comunitario",
+      "description": "La plantilla une las facturas falsas de Apex Growth y la grabación de la sala de juntas, forzando la expulsión de la dirección corrupta y refundando la startup.",
+      "when": {
+        "all": [
+          {
+            "verdict": "despedir_ceo"
+          },
+          {
+            "revealed_all": [
+              "CLUE_FAKE_INVOICES",
+              "CLUE_HIDDEN_RECORDER"
+            ]
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_EMPLOYEE",
+          "ROLE_SECURITY"
+        ]
+      }
+    },
+    {
+      "id": "silencio_total",
+      "title": "Silencio total",
+      "description": "Los culpables que quedan en pie ya igualan al resto de la plantilla: nadie más se atreve a hablar antes de la asamblea.",
+      "when": {
+        "forced": "silencio_total"
+      },
+      "winners": {
+        "roles": [
+          "ROLE_CEO",
+          "ROLE_ACCOMPLICE",
+          "ROLE_CFO"
+        ]
+      }
+    },
+    {
+      "id": "exclusiva",
+      "title": "Exclusiva en TechCrunch",
+      "description": "La Periodista sale del piso 14 con tres pruebas en la mochila y nadie la ha señalado.",
+      "when": {
+        "all": [
+          {
+            "held_count": {
+              "role": "ROLE_JOURNALIST",
+              "min": 3
+            }
+          },
+          {
+            "not": {
+              "accused_role": "ROLE_JOURNALIST"
+            }
+          }
+        ]
+      },
+      "winners": {
+        "roles": [
+          "ROLE_JOURNALIST"
         ]
       }
     }
@@ -153,6 +400,13 @@
         "min": 1,
         "max": 1
       },
+      "powers": [
+        "silence"
+      ],
+      "knows_teammates": true,
+      "motive_targets": [
+        "ROLE_LEAKER"
+      ],
       "visibility": {
         "default": "full",
         "rules": []
@@ -170,7 +424,104 @@
             "maxCollectedByOthers": 0
           }
         },
-        "Lograr que el Inversor culpe y destituya al CTO en la votación final."
+        "Lograr que el Inversor culpe y destituya al CTO en la votación final.",
+        {
+          "id": "camaras",
+          "description": "Borrar la grabación de la cámara del pasillo en la Sala de Seguridad antes de que alguien la exporte.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_CCTV_FOOTAGE"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        },
+        {
+          "id": "facturas",
+          "description": "Hacer desaparecer las facturas de Apex Growth del Departamento de Finanzas.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_FAKE_INVOICES"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ROLE_ACCOMPLICE",
+      "name": "El Abogado del CEO (Cómplice)",
+      "description": "Eres el abogado personal del CEO. Le ayudaste a tapar el desvío, redactaste el despido del CTO y preparaste un NDA para comprar al Lead Dev. Tu voz está en la grabadora de la Sala de Juntas.",
+      "team": "culpables",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 6,
+      "powers": [
+        "silence"
+      ],
+      "knows_teammates": true,
+      "visibility": {
+        "default": "partial",
+        "rules": [
+          {
+            "tags": [
+              "perjudica:ROLE_ACCOMPLICE",
+              "perjudica:ROLE_CEO"
+            ],
+            "level": "full"
+          }
+        ]
+      },
+      "motive_targets": [
+        "ROLE_LEAKER"
+      ],
+      "secret_objectives": [
+        {
+          "id": "nda",
+          "description": "Que nadie encuentre el acuerdo de confidencialidad que preparaste para el Lead Dev.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_LAWYER_NDA"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        },
+        {
+          "id": "movil",
+          "description": "Hacer desaparecer el móvil desechable de la terraza antes de que alguien lea el chat.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_BURNER_PHONE"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        },
+        {
+          "id": "grabadora",
+          "description": "Que la grabadora de la Sala de Juntas no llegue a la mesa: se oye tu voz.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_HIDDEN_RECORDER"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        },
+        {
+          "id": "cto_fuera",
+          "description": "Lograr que la asamblea despida al CTO.",
+          "type": "verdict",
+          "params": {
+            "options": [
+              "despedir_cto"
+            ]
+          }
+        }
       ]
     },
     {
@@ -185,7 +536,40 @@
       "secret_objectives": [
         "Extraer una copia forense no alterada de los logs de acceso del servidor.",
         "Demostrar que la IP de origen pertenecía al despacho del CEO.",
-        "Evitar ser votado como culpable por el Inversor."
+        "Evitar ser votado como culpable por el Inversor.",
+        {
+          "id": "torniquete",
+          "description": "Conseguir el registro del torniquete que prueba que tu tarjeta fue clonada.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_ACCESS_BADGE_LOG"
+            ],
+            "count": 1
+          }
+        },
+        {
+          "id": "cluster",
+          "description": "Copiar el historial del clúster del Laboratorio de IA: tu pipeline estaba en pausa.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_GPU_CRON_PANEL"
+            ],
+            "count": 1
+          }
+        },
+        {
+          "id": "despido",
+          "description": "Encontrar la carta de despido que ya te tenían redactada antes del robo.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_HR_DISMISSAL"
+            ],
+            "count": 1
+          }
+        }
       ]
     },
     {
@@ -214,7 +598,55 @@
             "count": 1
           }
         },
-        "Descartar testimonios falsos y no acusar al inocente."
+        "Descartar testimonios falsos y no acusar al inocente.",
+        {
+          "id": "movil",
+          "description": "Encontrar el móvil del desfalco: las deudas del CEO.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_CASINO_DEBTS"
+            ],
+            "count": 1
+          }
+        },
+        {
+          "id": "tres_pruebas",
+          "description": "Reunir al menos 3 pruebas distintas antes de la asamblea.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_SERVER_LOGS",
+              "pista:CLUE_UNLOCKED_LAPTOP",
+              "pista:CLUE_TORN_CONTRACT",
+              "pista:CLUE_SLACK_MESSAGE",
+              "pista:CLUE_ENCRYPTED_PENDRIVE",
+              "pista:CLUE_CCTV_FOOTAGE",
+              "pista:CLUE_ACCESS_BADGE_LOG",
+              "pista:CLUE_CASINO_DEBTS",
+              "pista:CLUE_GPU_CRON_PANEL",
+              "pista:CLUE_HIDDEN_RECORDER",
+              "pista:CLUE_FAKE_INVOICES",
+              "pista:CLUE_LAWYER_NDA",
+              "pista:CLUE_HR_DISMISSAL",
+              "pista:CLUE_BLACKOUT_LOG",
+              "pista:CLUE_GYM_LOCKER",
+              "pista:CLUE_BURNER_PHONE"
+            ],
+            "count": 3
+          }
+        },
+        {
+          "id": "nda",
+          "description": "Conseguir el NDA con el que querían comprar el silencio del Lead Dev.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_LAWYER_NDA"
+            ],
+            "count": 1
+          }
+        }
       ]
     },
     {
@@ -239,17 +671,223 @@
           }
         },
         "Negociar con el Inversor una recompensa o chantajear al CEO a cambio de callar.",
-        "Garantizar tu supervivencia laboral o escapar impune con el botín."
+        "Garantizar tu supervivencia laboral o escapar impune con el botín.",
+        {
+          "id": "grabadora",
+          "description": "Recuperar tu grabadora escondida en la Sala de Juntas antes de que el CEO la encuentre.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_HIDDEN_RECORDER"
+            ],
+            "count": 1
+          }
+        },
+        "Vender al mejor postor una prueba que nadie más tenga.",
+        {
+          "id": "desechable",
+          "description": "Encontrar el móvil desechable de la terraza: si hablan de callarte, mejor tenerlo tú.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_BURNER_PHONE"
+            ],
+            "count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "ROLE_SECURITY",
+      "name": "Jefe de Seguridad",
+      "description": "Llevas once años vigilando el piso 14. Anoche las cámaras del ala este se quedaron ciegas siete minutos y nadie te avisó. Hoy no vas a dejar que le pase nada a nadie.",
+      "team": "inocentes",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 5,
+      "powers": [
+        "escort"
+      ],
+      "secret_objectives": [
+        {
+          "id": "sai",
+          "description": "Conseguir el registro del SAI: alguien cortó la luz de las cámaras a propósito.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_BLACKOUT_LOG"
+            ],
+            "count": 1
+          }
+        },
+        {
+          "id": "camara",
+          "description": "Recuperar la grabación de la cámara 3 antes de que la sobrescriban.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_CCTV_FOOTAGE"
+            ],
+            "count": 1
+          }
+        },
+        {
+          "id": "culpable",
+          "description": "Que la asamblea señale al responsable del desfalco.",
+          "type": "accuse_culprit"
+        }
+      ]
+    },
+    {
+      "id": "ROLE_JOURNALIST",
+      "name": "La Periodista de TechCrunch",
+      "description": "Te has colado en la noche de auditoría con un pase de invitada. Llevas una semana detrás de NexusCore: si sales con tres pruebas, mañana tienes la exclusiva.",
+      "team": "mercenario",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 9,
+      "secret_objectives": [
+        {
+          "id": "tres",
+          "description": "Reunir 3 pruebas distintas antes de la asamblea.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_SERVER_LOGS",
+              "pista:CLUE_UNLOCKED_LAPTOP",
+              "pista:CLUE_TORN_CONTRACT",
+              "pista:CLUE_SLACK_MESSAGE",
+              "pista:CLUE_ENCRYPTED_PENDRIVE",
+              "pista:CLUE_CCTV_FOOTAGE",
+              "pista:CLUE_ACCESS_BADGE_LOG",
+              "pista:CLUE_CASINO_DEBTS",
+              "pista:CLUE_GPU_CRON_PANEL",
+              "pista:CLUE_HIDDEN_RECORDER",
+              "pista:CLUE_FAKE_INVOICES",
+              "pista:CLUE_LAWYER_NDA",
+              "pista:CLUE_HR_DISMISSAL",
+              "pista:CLUE_BLACKOUT_LOG",
+              "pista:CLUE_GYM_LOCKER",
+              "pista:CLUE_BURNER_PHONE"
+            ],
+            "count": 3
+          }
+        },
+        {
+          "id": "mesa",
+          "description": "Que al menos 3 pruebas acaben expuestas en la mesa del juicio.",
+          "type": "reveal_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_SERVER_LOGS",
+              "pista:CLUE_UNLOCKED_LAPTOP",
+              "pista:CLUE_TORN_CONTRACT",
+              "pista:CLUE_SLACK_MESSAGE",
+              "pista:CLUE_ENCRYPTED_PENDRIVE",
+              "pista:CLUE_CCTV_FOOTAGE",
+              "pista:CLUE_ACCESS_BADGE_LOG",
+              "pista:CLUE_CASINO_DEBTS",
+              "pista:CLUE_GPU_CRON_PANEL",
+              "pista:CLUE_HIDDEN_RECORDER",
+              "pista:CLUE_FAKE_INVOICES",
+              "pista:CLUE_LAWYER_NDA",
+              "pista:CLUE_HR_DISMISSAL",
+              "pista:CLUE_BLACKOUT_LOG",
+              "pista:CLUE_GYM_LOCKER",
+              "pista:CLUE_BURNER_PHONE"
+            ],
+            "count": 3
+          }
+        },
+        {
+          "id": "movil",
+          "description": "Encontrar el móvil desechable: tu fuente dice que hay amenazas.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_BURNER_PHONE"
+            ],
+            "count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "ROLE_CFO",
+      "name": "La Directora Financiera (Cómplice)",
+      "description": "Aprobaste las facturas de Apex Growth sabiendo que eran falsas. Si cae el CEO, tú vas detrás. El Inversor ya ha pedido ver la contabilidad.",
+      "team": "culpables",
+      "count": {
+        "min": 0,
+        "max": 1
+      },
+      "min_players": 10,
+      "powers": [
+        "silence"
+      ],
+      "knows_teammates": true,
+      "visibility": {
+        "default": "partial",
+        "rules": [
+          {
+            "tags": [
+              "perjudica:ROLE_CFO",
+              "perjudica:ROLE_CEO"
+            ],
+            "level": "full"
+          }
+        ]
+      },
+      "motive_targets": [
+        "ROLE_INVESTOR"
+      ],
+      "secret_objectives": [
+        {
+          "id": "facturas",
+          "description": "Que nadie saque las facturas de Apex Growth del Departamento de Finanzas.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_FAKE_INVOICES"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        },
+        {
+          "id": "contrato",
+          "description": "Que el contrato roto de Apex Growth no llegue a la mesa.",
+          "type": "keep_evidence_hidden",
+          "params": {
+            "tags": [
+              "pista:CLUE_TORN_CONTRACT"
+            ],
+            "maxCollectedByOthers": 0
+          }
+        },
+        {
+          "id": "cto_fuera",
+          "description": "Lograr que la asamblea despida al CTO.",
+          "type": "verdict",
+          "params": {
+            "options": [
+              "despedir_cto"
+            ]
+          }
+        }
       ]
     },
     {
       "id": "ROLE_EMPLOYEE",
       "name": "Empleado de NexusCore",
-      "description": "Rol de relleno para partidas de 5 y 6 jugadores (añadido: el caso original solo tenía 4 roles).",
+      "description": "Trabajas en NexusCore y te ha tocado quedarte la noche de la auditoría. No sabes nada… todavía.",
       "team": "inocentes",
       "count": {
         "min": 0,
-        "max": 2
+        "max": 4
       },
       "weight": 1,
       "secret_objectives": [
@@ -257,6 +895,32 @@
           "id": "votar_bien",
           "description": "Ayudar a señalar al responsable del desfalco.",
           "type": "accuse_culprit"
+        },
+        {
+          "id": "explorar",
+          "description": "Encontrar y guardar al menos 2 pruebas para la asamblea.",
+          "type": "collect_evidence",
+          "params": {
+            "tags": [
+              "pista:CLUE_SERVER_LOGS",
+              "pista:CLUE_UNLOCKED_LAPTOP",
+              "pista:CLUE_TORN_CONTRACT",
+              "pista:CLUE_SLACK_MESSAGE",
+              "pista:CLUE_ENCRYPTED_PENDRIVE",
+              "pista:CLUE_CCTV_FOOTAGE",
+              "pista:CLUE_ACCESS_BADGE_LOG",
+              "pista:CLUE_CASINO_DEBTS",
+              "pista:CLUE_GPU_CRON_PANEL",
+              "pista:CLUE_HIDDEN_RECORDER",
+              "pista:CLUE_FAKE_INVOICES",
+              "pista:CLUE_LAWYER_NDA",
+              "pista:CLUE_HR_DISMISSAL",
+              "pista:CLUE_BLACKOUT_LOG",
+              "pista:CLUE_GYM_LOCKER",
+              "pista:CLUE_BURNER_PHONE"
+            ],
+            "count": 2
+          }
         }
       ]
     }
@@ -269,8 +933,8 @@
       "type": "text",
       "medium": "digital/critica",
       "position": {
-        "x": 200,
-        "y": 150
+        "x": 460,
+        "y": 120
       },
       "room": "Sala de Servidores",
       "pocketable": false,
@@ -316,6 +980,9 @@
           ],
           "seconds": 6
         }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
       ]
     },
     {
@@ -325,8 +992,8 @@
       "type": "photo",
       "medium": "digital/visual",
       "position": [
-        640,
-        120
+        1080,
+        60
       ],
       "room": "Despacho del CEO",
       "pocketable": false,
@@ -365,6 +1032,9 @@
           ],
           "seconds": 3
         }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
       ]
     },
     {
@@ -374,8 +1044,8 @@
       "type": "item",
       "medium": "documento/fisica",
       "position": {
-        "x": 200,
-        "y": 550
+        "x": 1780,
+        "y": 1205
       },
       "room": "Cuarto de Archivo y Basura",
       "weight": 2,
@@ -398,6 +1068,9 @@
           ],
           "seconds": 5
         }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
       ]
     },
     {
@@ -407,8 +1080,8 @@
       "type": "text",
       "medium": "digital/testimonial",
       "position": {
-        "x": 640,
-        "y": 400
+        "x": 1760,
+        "y": 40
       },
       "room": "Open Space",
       "pocketable": false,
@@ -446,6 +1119,9 @@
           ],
           "seconds": 2
         }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
       ]
     },
     {
@@ -455,8 +1131,8 @@
       "type": "item",
       "medium": "fisica/criptografica",
       "position": {
-        "x": 1050,
-        "y": 550
+        "x": 1300,
+        "y": 780
       },
       "room": "Cafetería",
       "weight": 3,
@@ -470,6 +1146,557 @@
       ],
       "harms": [
         "ROLE_CEO"
+      ],
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_CCTV_FOOTAGE",
+      "name": "Grabación de la Cámara 3 del Pasillo",
+      "description": "Clip de la cámara 3 a las 02:01: una figura con el abrigo largo del CEO entra a la Sala de Servidores con una laptop bajo el brazo. La marca de tiempo coincide con la transferencia.",
+      "type": "photo",
+      "medium": "digital/captura",
+      "position": {
+        "x": -400,
+        "y": -150
+      },
+      "room": "Sala de Seguridad (CCTV)",
+      "pocketable": false,
+      "weight": 2,
+      "tags": [
+        "digital",
+        "captura"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_INVESTOR",
+        "ROLE_LEAKER"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "CAM-03 · PASILLO · 02:01:14 — Silueta con abrigo largo y maletín entra a SALA DE SERVIDORES. Sale a las 02:09:40."
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Sobrescribir el bucle de grabación",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 6
+        },
+        {
+          "kind": "backup",
+          "label": "Exportar el clip a una memoria",
+          "roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR",
+            "ROLE_LEAKER"
+          ],
+          "seconds": 5
+        }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_ACCESS_BADGE_LOG",
+      "name": "Registro del Torniquete de Acceso",
+      "description": "El torniquete marca la tarjeta del CTO entrando a las 01:58, pero el mismo registro muestra que el CTO salió por el parking a las 22:40 y no volvió. Alguien usó una tarjeta clonada.",
+      "type": "text",
+      "medium": "digital/registro",
+      "position": {
+        "x": -410,
+        "y": 340
+      },
+      "room": "Recepción y Vestíbulo",
+      "pocketable": false,
+      "weight": 2,
+      "tags": [
+        "digital",
+        "registro"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "22:40:03 SALIDA parking · TARJETA 0007 (CTO)\n01:58:51 ENTRADA vestíbulo · TARJETA 0007 (CTO) · lector sin foto\n02:12:30 SALIDA vestíbulo · TARJETA 0001 (Presidencia)"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Purgar el registro del torniquete",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 5
+        },
+        {
+          "kind": "backup",
+          "label": "Imprimir el registro de accesos",
+          "roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR"
+          ],
+          "seconds": 4
+        }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_CASINO_DEBTS",
+      "name": "Avisos de Cobro junto a la Caja Fuerte",
+      "description": "Un sobre arrugado con avisos de cobro de un casino online y de un exchange cripto: 1,6 M USD en deudas vencidas a nombre del CEO. Es el móvil del desfalco.",
+      "type": "item",
+      "medium": "fisico/documental",
+      "position": {
+        "x": 1270,
+        "y": 230
+      },
+      "room": "Despacho del CEO",
+      "pocketable": true,
+      "weight": 1,
+      "tags": [
+        "fisico",
+        "documental"
+      ],
+      "benefits": [
+        "ROLE_INVESTOR",
+        "ROLE_LEAKER"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "ÚLTIMO AVISO — Saldo vencido: 1.612.000 USD. Titular: el CEO de NexusCore. Plazo: 48 horas antes de acciones legales."
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Quemar los avisos en la papelera",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 4
+        },
+        {
+          "kind": "backup",
+          "label": "Fotografiar los avisos de cobro",
+          "roles": [
+            "ROLE_INVESTOR",
+            "ROLE_LEAKER"
+          ],
+          "seconds": 3
+        }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_GPU_CRON_PANEL",
+      "name": "Historial del Clúster de Entrenamiento",
+      "description": "El 'pipeline de despliegue' del CTO estaba en pausa esa noche. La tarea programada que movió los fondos se lanzó desde la cuenta admin 'presidencia' a las 02:02.",
+      "type": "text",
+      "medium": "digital/critica",
+      "position": {
+        "x": 2380,
+        "y": -110
+      },
+      "room": "Laboratorio de IA",
+      "pocketable": false,
+      "weight": 2,
+      "tags": [
+        "digital",
+        "critica"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_LEAKER"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "cron[deploy-cto] ESTADO: PAUSADO desde 18:00\n02:02:07 job 'treasury-sync' lanzado por admin@presidencia → wallet bc1q…9f3k"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Reiniciar el clúster y borrar el historial",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 8
+        },
+        {
+          "kind": "backup",
+          "label": "Copiar el historial del planificador",
+          "roles": [
+            "ROLE_CTO",
+            "ROLE_LEAKER"
+          ],
+          "seconds": 6
+        }
+      ],
+      "incriminates": [
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_HIDDEN_RECORDER",
+      "name": "Grabadora Escondida bajo la Mesa",
+      "description": "Una grabadora de voz pegada bajo la mesa de juntas. Se oye al CEO con su abogado: 'Si el CTO cae, la Serie B se firma igual y nadie mira la billetera'.",
+      "type": "audio",
+      "medium": "audio/testimonial",
+      "position": {
+        "x": 460,
+        "y": 1010
+      },
+      "room": "Sala de Juntas Ejecutiva",
+      "pocketable": true,
+      "weight": 2,
+      "tags": [
+        "audio",
+        "testimonial"
+      ],
+      "benefits": [
+        "ROLE_LEAKER",
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "[audio 00:41] «Si el CTO cae, la Serie B se firma igual y nadie mira la billetera. Tú prepara el despido para mañana.»"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Romper la grabadora",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 3
+        },
+        {
+          "kind": "backup",
+          "label": "Copiar el audio al móvil",
+          "roles": [
+            "ROLE_LEAKER",
+            "ROLE_INVESTOR"
+          ],
+          "seconds": 5
+        }
+      ],
+      "incriminates": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ]
+    },
+    {
+      "id": "CLUE_FAKE_INVOICES",
+      "name": "Facturas de Apex Growth LLC",
+      "description": "Carpeta con 12 facturas de 'Apex Growth LLC' por 'asesoría estratégica', aprobadas solo con la firma del CEO y pagadas a la misma billetera fría del desvío.",
+      "type": "item",
+      "medium": "documental/fisico",
+      "position": {
+        "x": 2320,
+        "y": 990
+      },
+      "room": "Departamento de Finanzas",
+      "pocketable": true,
+      "weight": 2,
+      "tags": [
+        "documental",
+        "fisico"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_CEO",
+        "ROLE_CFO"
+      ],
+      "content": {
+        "text": "12 facturas · Apex Growth LLC (Delaware) · 'Asesoría estratégica' · Total 1.800.000 USD · Aprobó: CEO (firma única) · Pago: billetera fría bc1q…9f3k"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Pasar las facturas por la trituradora",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 5
+        },
+        {
+          "kind": "backup",
+          "label": "Escanear las facturas",
+          "roles": [
+            "ROLE_CTO",
+            "ROLE_INVESTOR"
+          ],
+          "seconds": 4
+        }
+      ],
+      "incriminates": [
+        "ROLE_CEO",
+        "ROLE_CFO"
+      ]
+    },
+    {
+      "id": "CLUE_LAWYER_NDA",
+      "name": "Acuerdo de Confidencialidad sin Firmar",
+      "description": "NDA a nombre del Lead Dev con una indemnización de 200.000 USD. Sin firmar: querían comprar su silencio.",
+      "type": "item",
+      "medium": "documento/fisica",
+      "position": {
+        "x": 2900,
+        "y": -80
+      },
+      "room": "Departamento Legal",
+      "pocketable": true,
+      "weight": 2,
+      "tags": [
+        "documento",
+        "fisica"
+      ],
+      "benefits": [
+        "ROLE_LEAKER",
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ],
+      "incriminates": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "ACUERDO DE CONFIDENCIALIDAD · Parte receptora: Lead Dev de NexusCore · Indemnización: 200.000 USD · Redactado por: asesoría jurídica de Presidencia · Firma del receptor: (en blanco)"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Pasar el borrador por la trituradora del bufete",
+          "roles": [
+            "ROLE_ACCOMPLICE",
+            "ROLE_CEO"
+          ],
+          "seconds": 4
+        },
+        {
+          "kind": "backup",
+          "label": "Fotografiar el acuerdo",
+          "roles": [
+            "ROLE_LEAKER",
+            "ROLE_INVESTOR"
+          ],
+          "seconds": 3
+        }
+      ]
+    },
+    {
+      "id": "CLUE_HR_DISMISSAL",
+      "name": "Carta de Despido del CTO, ya Redactada",
+      "description": "Despido disciplinario del CTO fechado AYER, antes del robo. Premeditación.",
+      "type": "item",
+      "medium": "documento/fisica",
+      "position": {
+        "x": 3380,
+        "y": 0
+      },
+      "room": "Recursos Humanos",
+      "pocketable": true,
+      "weight": 1,
+      "tags": [
+        "documento",
+        "fisica"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_SECURITY"
+      ],
+      "harms": [
+        "ROLE_CEO",
+        "ROLE_ACCOMPLICE"
+      ],
+      "incriminates": [
+        "ROLE_CEO",
+        "ROLE_ACCOMPLICE"
+      ],
+      "content": {
+        "text": "DESPIDO DISCIPLINARIO · Destinatario: CTO · Motivo: negligencia grave en la custodia de credenciales SSH · Fecha: ayer, 17:30 · Visto bueno: Presidencia y asesoría jurídica"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Borrar la carta del expediente de personal",
+          "roles": [
+            "ROLE_CEO",
+            "ROLE_ACCOMPLICE"
+          ],
+          "seconds": 4
+        },
+        {
+          "kind": "backup",
+          "label": "Escanear la carta de despido",
+          "roles": [
+            "ROLE_CTO",
+            "ROLE_SECURITY"
+          ],
+          "seconds": 3
+        }
+      ]
+    },
+    {
+      "id": "CLUE_BLACKOUT_LOG",
+      "name": "Registro del SAI del Cuarto Eléctrico",
+      "description": "Corte de 7 min a las 01:55 que cegó las cámaras del ala este, ordenado con la tarjeta de Presidencia.",
+      "type": "text",
+      "medium": "digital/registro",
+      "position": {
+        "x": 3820,
+        "y": -160
+      },
+      "room": "Cuarto Eléctrico",
+      "pocketable": false,
+      "weight": 2,
+      "tags": [
+        "digital",
+        "registro"
+      ],
+      "benefits": [
+        "ROLE_SECURITY",
+        "ROLE_CTO"
+      ],
+      "harms": [
+        "ROLE_CEO"
+      ],
+      "incriminates": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "SAI-ESTE · 01:55:02 CORTE MANUAL (panel B) · Tarjeta 0001 (Presidencia) · CCTV ala este SIN ALIMENTACIÓN · 02:02:10 restablecido"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Reiniciar el SAI y vaciar su registro",
+          "roles": [
+            "ROLE_CEO"
+          ],
+          "seconds": 6
+        },
+        {
+          "kind": "backup",
+          "label": "Exportar el registro del SAI",
+          "roles": [
+            "ROLE_SECURITY",
+            "ROLE_CTO"
+          ],
+          "seconds": 4
+        }
+      ]
+    },
+    {
+      "id": "CLUE_GYM_LOCKER",
+      "name": "Taquilla 14 del Gimnasio",
+      "description": "El abrigo largo del CEO y, en el bolsillo, la tarjeta clonada del CTO.",
+      "type": "item",
+      "medium": "fisica/objeto",
+      "position": {
+        "x": 2960,
+        "y": 1000
+      },
+      "room": "Gimnasio",
+      "pocketable": true,
+      "weight": 2,
+      "tags": [
+        "fisica",
+        "objeto"
+      ],
+      "benefits": [
+        "ROLE_CTO",
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_CEO",
+        "ROLE_ACCOMPLICE"
+      ],
+      "incriminates": [
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "Taquilla 14 · Abrigo largo gris marengo (talla del CEO) · En el bolsillo interior: tarjeta RFID regrabable, 'EMP-0007 · CTO'"
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Tirar la tarjeta clonada por el desagüe de las duchas",
+          "roles": [
+            "ROLE_CEO",
+            "ROLE_ACCOMPLICE"
+          ],
+          "seconds": 4
+        }
+      ]
+    },
+    {
+      "id": "CLUE_BURNER_PHONE",
+      "name": "Móvil Desechable en una Maceta",
+      "description": "Chat entre 'C' y 'Abogado': 'Si alguien habla, lo callamos antes de la asamblea'.",
+      "type": "text",
+      "medium": "digital/testimonial",
+      "position": {
+        "x": 3700,
+        "y": 1080
+      },
+      "room": "Terraza",
+      "pocketable": true,
+      "weight": 1,
+      "tags": [
+        "digital",
+        "testimonial"
+      ],
+      "benefits": [
+        "ROLE_LEAKER",
+        "ROLE_JOURNALIST",
+        "ROLE_INVESTOR"
+      ],
+      "harms": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ],
+      "incriminates": [
+        "ROLE_ACCOMPLICE",
+        "ROLE_CEO"
+      ],
+      "content": {
+        "text": "C: ¿El Lead Dev va a firmar?\nAbogado: No contesta. Y la periodista lleva toda la semana preguntando.\nC: Si alguien habla, lo callamos antes de la asamblea."
+      },
+      "actions": [
+        {
+          "kind": "delete",
+          "label": "Formatear el móvil y tirar la SIM",
+          "roles": [
+            "ROLE_ACCOMPLICE"
+          ],
+          "seconds": 4
+        }
       ]
     }
   ]

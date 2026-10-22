@@ -15,6 +15,7 @@ import { SkinCatalog, type SkinConfig } from './domain/skins/SkinCatalog.js';
 import { WsServer } from './net/WsServer.js';
 import { AbilityCatalog, type AbilityConfig } from './domain/abilities/index.js';
 import { CosmeticCatalog, type CosmeticConfig } from './domain/cosmetics/CosmeticCatalog.js';
+import { LineOfSight } from './domain/world/LineOfSight.js';
 
 const CONFIG_DIR = fileURLToPath(new URL('../../../../shared/config/', import.meta.url));
 const ROLE_SET = process.env.ROLE_SET ?? 'mansion_clasica';
@@ -27,11 +28,19 @@ const PORT = Number(process.env.PORT ?? 7777);
 const TICK_HZ = 20;
 /** Perfiles (mock JSON). PROFILES_FILE=<ruta> para guardarlos en otro sitio. */
 const PROFILES_FILE = process.env.PROFILES_FILE ?? fileURLToPath(new URL('../../../data/profiles.json', import.meta.url));
-/** Jugadores por partida en la cola pública y segundos de cuenta atrás de esas salas. */
-const MATCH_SIZE = Number(process.env.MATCH_SIZE ?? 4);
+/**
+ * Cola pública: con MATCH_MAX en cola arranca ya; con MATCH_MIN empieza una cuenta atrás de
+ * MATCH_WAIT_MS y al vencer arranca con los que haya. MATCH_SIZE (antiguo) = alias de MATCH_MAX.
+ */
+const MATCH_MAX = Number(process.env.MATCH_MAX ?? process.env.MATCH_SIZE ?? 12);
+const MATCH_MIN = Number(process.env.MATCH_MIN ?? 4);
+const MATCH_WAIT_MS = Number(process.env.MATCH_WAIT_MS ?? 30_000);
+/** Muros para los testigos (los exporta el cliente); sin el archivo, solo cuenta la distancia. */
+const WALLS_FILE = process.env.WALLS_FILE ?? `${CONFIG_DIR}maps/office_walls.json`;
+/** Segundos de cuenta atrás del lobby de las salas públicas (ya llenas por el matchmaking). */
 const AUTO_START_MS = Number(process.env.AUTO_START_SECONDS ?? 10) * 1000;
 
-async function loadSetup(): Promise<Pick<CompiledScenario, 'roleSet' | 'map' | 'trial' | 'endings' | 'phaseDurationsMs'>> {
+async function loadSetup(): Promise<Pick<CompiledScenario, 'roleSet' | 'map' | 'trial' | 'endings' | 'phaseDurationsMs'> & Partial<Pick<CompiledScenario, 'emergency' | 'ghostTaskPoints'>>> {
   if (SCENARIO) {
     const compiled = SCENARIO.endsWith('.json')
       ? await loadScenario({ load: async () => JSON.parse(await readFile(SCENARIO, 'utf8')) }, SCENARIO)
@@ -100,26 +109,27 @@ async function main() {
   const profiles = progression
     ? new ProfileService(progression, store, catalog ?? { has: () => false }, undefined, undefined, cosmetics)
     : undefined;
-  const gateway = new GameGateway(profiles, MATCH_SIZE);
+  const gateway = new GameGateway(profiles, { minSize: MATCH_MIN, maxSize: MATCH_MAX, waitMs: MATCH_WAIT_MS });
+  const lineOfSight = LineOfSight.load(WALLS_FILE, (m) => console.warn(`[muros] ${m}`)) ?? undefined;
   const directory = new RoomDirectory((code, visibility) => {
     // Cada sala: su propio RoleManager (reparto secreto independiente).
     const { roleManager, objectives } = createRoleManager(new InMemoryRoleConfigSource({ [setup.roleSet.id]: setup.roleSet }), mathRandom);
     roleManager.useRoleSet(structuredClone(setup.roleSet));
     return new Room(code, {
       roles: roleManager, objectives, map: structuredClone(setup.map), trial: setup.trial, endings: setup.endings,
-      skins: catalog, abilities,
+      skins: catalog, abilities, lineOfSight, emergency: setup.emergency, ghostTaskPoints: setup.ghostTaskPoints,
     }, gateway, {
       phaseDurationsMs: setup.phaseDurationsMs,
       visibility,
       autoStartDelayMs: AUTO_START_MS,
-      onResolved: (resolution) => gateway.rewardMatch(resolution),
+      onResolved: (resolution, activity) => gateway.rewardMatch(resolution, activity),
     });
   });
   gateway.attach(directory);
   new WsServer(PORT, gateway).listen();
   console.log(`Escenario: ${setup.roleSet.name} · perfiles en ${PROFILES_FILE}`);
 
-  setInterval(() => directory.tick(), 1000 / TICK_HZ);
+  setInterval(() => { gateway.tick(); directory.tick(); }, 1000 / TICK_HZ);
   // Guardar perfiles pendientes al cerrar.
   for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => { store.flush(); process.exit(0); });
 }

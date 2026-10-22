@@ -18,11 +18,10 @@ extends Node2D
 @export var player_light_energy := 0.3
 @export var evidence_light_scale := 1.1
 @export var evidence_light_color := Color("#E5A93C")  # UiPalette.AMBER: las pistas brillan en ámbar
-## Suelo de oficina bajo el mapa (el color de fondo no lo oscurece el CanvasModulate,
-## así que sin suelo las luces no tendrían dónde verse). Tamaño 0 = sin suelo.
-@export var floor_rect := Rect2(-640, -384, 2560, 1536)
-@export var floor_color := Color("#5A6684")
-@export var floor_tile := 64.0
+## Suelo de oficina bajo el mapa: OfficeMap se encarga del suelo con baldosas y detalles.
+@export var floor_rect := Rect2(0, 0, 0, 0)
+@export var floor_color := Color("#DCE3EB")
+@export var floor_tile := 80.0
 
 var modulate_node: CanvasModulate
 var _local_light: PointLight2D
@@ -31,10 +30,12 @@ static var _light_texture: GradientTexture2D
 func _ready() -> void:
 	z_index = -10  # el suelo se dibuja debajo de jugadores y pistas
 	queue_redraw()
-	modulate_node = CanvasModulate.new()
-	modulate_node.name = "NightModulate"
-	modulate_node.color = night_color
-	add_child(modulate_node)
+	# Solo se crea CanvasModulate si se activa explícitamente modo noche/apagón
+	if night_color.r < 0.6:
+		modulate_node = CanvasModulate.new()
+		modulate_node.name = "NightModulate"
+		modulate_node.color = night_color
+		add_child(modulate_node)
 	for root in [players_root, evidence_root]:
 		if root == null:
 			continue

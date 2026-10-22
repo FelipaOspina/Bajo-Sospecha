@@ -92,6 +92,22 @@ export const createDefaultConditionRegistry = () =>
         return ctx.holdersOf(o.evidence).some((p) => ctx.roleOf(p) === o.role);
       },
     })
+    .register({
+      key: 'held_count',
+      validate: (v) => {
+        const o = v as { role?: unknown; min?: unknown };
+        return typeof o?.role === 'string' && Number.isInteger(o?.min) ? [] : ['held_count necesita { role, min }'];
+      },
+      evaluate: (v, ctx) => {
+        const o = v as { role: string; min: number };
+        return (ctx.heldByRole?.(o.role).length ?? 0) >= o.min;
+      },
+    })
+    .register({
+      key: 'forced',
+      validate: (v) => (typeof v === 'string' && v ? [] : ['forced necesita el id del final']),
+      evaluate: (v, ctx) => (ctx.forcedEnding ?? null) === v,
+    })
     .register({ key: 'all', validate: nestedList('all'), evaluate: (v, _c, ev) => (v as Condition[]).every(ev) })
     .register({ key: 'any', validate: nestedList('any'), evaluate: (v, _c, ev) => (v as Condition[]).some(ev) })
     .register({ key: 'not', validate: (v, nested) => nested(v), evaluate: (v, _c, ev) => !ev(v as Condition) });

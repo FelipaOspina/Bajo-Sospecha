@@ -5,6 +5,8 @@ extends Node
 ##  - exploración (briefing / investigación): mapa visible y activo;
 ##  - asamblea (debate / votación): oculta y pausa el mapa (nadie se mueve ni manda
 ##    posiciones), cierra el modal de inspección y despliega AssemblyBoardUI;
+##  - asamblea de emergencia (al reportar un cuerpo): oculta y pausa el mapa y abre
+##    EmergencyPanel (votar expulsar a un vivo o saltar);
 ##  - resultados: se cierra la mesa (la pantalla final la abre ResolutionScreen).
 ## Es el único sitio que decide qué vista se ve; las vistas solo exponen open/close.
 
@@ -14,12 +16,14 @@ const VIEW_MENU := "menu"
 const VIEW_EXPLORATION := "exploration"
 const VIEW_ASSEMBLY := "assembly"
 const VIEW_RESULTS := "results"
+const VIEW_EMERGENCY := "emergency"
 const ASSEMBLY_PHASES := ["discussion", "voting"]
 const MENU_PHASES := ["", "lobby"]
 
 @export var exploration_view: CanvasItem      # normalmente Main/Map
 @export var board: AssemblyBoardUI
 @export var inspection_modal: EvidenceInspectionModal
+@export var emergency_panel: EmergencyPanel
 
 var view := ""
 
@@ -34,6 +38,8 @@ static func view_for(phase: String) -> String:
 		return VIEW_ASSEMBLY
 	if phase == "results":
 		return VIEW_RESULTS
+	if phase == "emergency":
+		return VIEW_EMERGENCY
 	return VIEW_EXPLORATION
 
 func apply_phase(phase: String) -> void:
@@ -54,4 +60,9 @@ func apply_phase(phase: String) -> void:
 			board.open_board()
 		else:
 			board.close_board()
+	if emergency_panel:
+		if next == VIEW_EMERGENCY:
+			emergency_panel.open_panel()
+		else:
+			emergency_panel.close_panel()
 	view_changed.emit(next)

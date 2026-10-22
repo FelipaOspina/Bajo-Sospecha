@@ -46,13 +46,21 @@ test('partida: XP para perfil y pase, monedas y subidas de nivel', async () => {
   const { svc } = await service();
   const cfg = await config();
   const p = svc.load(undefined, 'Ana');
+  p.path!.done.push('jugar_1');   // sin el reto del nivel 2, para medir solo la partida
+  p.xp = 0;
   const r = svc.grantMatch(p, { won: true, objectivesCompleted: 2 });
   const xp = cfg.match_rewards.xp_played + cfg.match_rewards.xp_win + 2 * cfg.match_rewards.xp_per_objective;
-  assert.deepEqual(r, { xp, coins: cfg.match_rewards.coins_played + cfg.match_rewards.coins_win, won: true, levelsGained: 0, passLevelsGained: Math.floor(xp / cfg.battle_pass.xp_per_level) });
+  assert.equal(r.xp, xp);
+  assert.equal(r.matchXp, xp);
+  const levelCoins = (r.levelRewards ?? []).reduce((t, l) => t + (l.coins ?? 0), 0);
+  assert.equal(r.coins, cfg.match_rewards.coins_played + cfg.match_rewards.coins_win + levelCoins, 'partida + recompensas de nivel de la Ruta');
+  assert.equal(r.won, true);
+  assert.equal(r.levelsGained, svc.level(xp) - 1);
+  assert.equal(r.passLevelsGained, Math.floor(xp / cfg.battle_pass.xp_per_level));
   assert.equal(p.stats.won, 1);
   for (let i = 0; i < 400; i++) svc.grantMatch(p, { won: false, objectivesCompleted: 0 });
   assert.equal(svc.view(p).pass.level, 50, 'el pase se queda en 50');
-  assert.ok(svc.view(p).level > 40);
+  assert.ok(svc.view(p).level > 15, 'muchas partidas: bien pasada la Ruta del Detective');
 });
 
 test('Executive Pass: reclamar gratis y premium, cosméticos y créditos', async () => {

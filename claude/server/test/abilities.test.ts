@@ -127,9 +127,9 @@ test('acelerón: el servidor acepta más velocidad solo mientras dura (con un ma
 
 test('rugido: corta las acciones cercanas, salvo la del panda (calma); nunca dice roles', async () => {
   const { ability, send, walkTo, snap, events, inbox } = await setup(FOUR);
-  walkTo('ceo', 200, 150);
-  walkTo('leak', 230, 170);
-  walkTo('cto', 260, 150);
+  walkTo('ceo', 460, 120);
+  walkTo('leak', 490, 140);
+  walkTo('cto', 520, 120);
   const logs = snap('ceo').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents[0]!.instanceId;
   assert.equal(send('ceo', { t: 'channel_start', evidenceInstanceId: logs, action: 'delete' }), 'ok');
   inbox.clear();
@@ -147,8 +147,8 @@ test('sigilo, engaño y oído: quién ve la barra de acción de quién', async (
   const { ability, send, walkTo, snap } = await setup({
     ceo: ['mapache', 'ROLE_CEO'], cto: ['zorro', 'ROLE_CTO'], inv: ['conejo', 'ROLE_INVESTOR'], leak: ['oso', 'ROLE_LEAKER'],
   });
-  walkTo('ceo', 200, 150);
-  walkTo('leak', 260, 200);
+  walkTo('ceo', 460, 120);
+  walkTo('leak', 520, 170);
   const logs = snap('ceo').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents[0]!.instanceId;
   assert.equal(send('ceo', { t: 'channel_start', evidenceInstanceId: logs, action: 'delete' }), 'ok');
   // Mapache: manos hábiles, 15 % más rápido (10 s → 8,5 s).
@@ -163,9 +163,9 @@ test('sigilo, engaño y oído: quién ve la barra de acción de quién', async (
   const { send: send2, walkTo: walk2, snap: snap2, ability: ability2 } = await setup({
     ceo: ['zorro', 'ROLE_CEO'], cto: ['leon', 'ROLE_CTO'], inv: ['conejo', 'ROLE_INVESTOR'], leak: ['oso', 'ROLE_LEAKER'],
   });
-  walk2('ceo', 200, 150);
-  walk2('inv', 200, 560);   // 410 px: dentro de 500 × 0.7 (astucia del zorro) × 1.4 = 490
-  walk2('leak', 200, 540);  // 390 px: fuera de 500 × 0.7 = 350
+  walk2('ceo', 460, 120);
+  walk2('inv', 460, 530);   // 410 px: dentro de 500 × 0.7 (astucia del zorro) × 1.4 = 490
+  walk2('leak', 460, 510);  // 390 px: fuera de 500 × 0.7 = 350
   const logs2 = snap2('ceo').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents[0]!.instanceId;
   assert.equal(send2('ceo', { t: 'channel_start', evidenceInstanceId: logs2, action: 'delete' }), 'ok');
   assert.equal(snap2('inv').players.find((p) => p.id === 'ceo')!.channel?.label, 'Purgar partición /var/log/audit.log');

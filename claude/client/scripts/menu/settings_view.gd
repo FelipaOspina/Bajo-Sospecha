@@ -1,7 +1,11 @@
 class_name SettingsView
 extends MenuView
 ## Configuración: tu nombre visible, el servidor y el id de tu perfil (mock, sin
-## contraseña: el perfil se recupera con el id guardado en este equipo).
+## contraseña: el perfil se recupera con el id guardado en este equipo), los consejos de la
+## Ruta del Detective en las primeras partidas y repetir la práctica.
+
+## Repetir la práctica «Primer día en NexusCore» (la arranca MainMenu).
+signal tutorial_requested
 
 var name_input: LineEdit
 var save_button: Button
@@ -9,6 +13,7 @@ var server_label: Label
 var profile_label: Label
 var quality_option: OptionButton
 var pet_volume: HSlider
+var hints_toggle: CheckButton
 
 const QUALITY := [["auto", "Automática (rendimiento en móvil)"], ["off", "Máxima (animación completa)"], ["on", "Rendimiento (más FPS)"]]
 
@@ -61,6 +66,24 @@ func build() -> void:
 	box.add_child(pet_volume)
 	box.add_child(caption("Ronroneos, ladridos y demás al tocar, acariciar o dar de comer a tu animal en la sala. A cero, en silencio.", 12))
 	box.add_child(HSeparator.new())
+	box.add_child(heading("Ruta del Detective", 16))
+	hints_toggle = CheckButton.new()
+	hints_toggle.name = "HintsToggle"
+	hints_toggle.text = "Consejos en las primeras partidas"
+	hints_toggle.toggled.connect(func(on: bool) -> void:
+		Account.set_hints_enabled(on)
+		toast_requested.emit("Consejos en partida %s." % ("activados" if on else "desactivados")))
+	box.add_child(hints_toggle)
+	box.add_child(caption("Avisos cortos que explican lo que pasa (pruebas, cuerpos, asambleas, juicio) hasta el nivel %d. Iguales para todos los roles." % int(Progression.data().get("detective_path", {}).get("hint_max_level", 5)), 12))
+	var practice := Button.new()
+	practice.name = "ReplayTutorial"
+	practice.text = "  Repetir «Primer día en NexusCore»  "
+	practice.custom_minimum_size.y = 34
+	practice.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	UiPalette.style_button(practice, UiPalette.AMBER)
+	practice.pressed.connect(func() -> void: tutorial_requested.emit())
+	box.add_child(practice)
+	box.add_child(HSeparator.new())
 	server_label = caption("", 13, Color.WHITE)
 	box.add_child(server_label)
 	profile_label = caption("", 12)
@@ -74,6 +97,7 @@ func refresh() -> void:
 		if QUALITY[i][0] == ChibiBaker.mode:
 			quality_option.select(i)
 	pet_volume.set_value_no_signal(PetSfx.volume * 100.0)
+	hints_toggle.set_pressed_no_signal(Account.hints_enabled)
 	server_label.text = "Servidor: %s · %s" % [Network.server_url, "conectado" if Account.online else "sin conexión"]
 	profile_label.text = "Id de perfil: %s" % (Account.profile_id if Account.profile_id != "" else "se crea al conectar")
 

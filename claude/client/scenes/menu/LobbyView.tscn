@@ -21,14 +21,11 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 214.0
-offset_top = 178.0
-offset_right = -246.0
-offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2")
+focus_margins = Vector4(222, 196, 272, 96)
 
 [node name="RoomCard" type="PanelContainer" parent="."]
 unique_name_in_owner = true
@@ -36,10 +33,10 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -340.0
+offset_left = -350.0
 offset_top = 74.0
-offset_right = 300.0
-offset_bottom = 170.0
+offset_right = 364.0
+offset_bottom = 184.0
 grow_horizontal = 2
 
 [node name="Row" type="HBoxContainer" parent="RoomCard"]
@@ -47,7 +44,8 @@ layout_mode = 2
 theme_override_constants/separation = 14
 
 [node name="CaseThumb" type="Control" parent="RoomCard/Row"]
-custom_minimum_size = Vector2(118, 76)
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 84)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -57,7 +55,7 @@ script = ExtResource("3")
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-theme_override_constants/separation = 3
+theme_override_constants/separation = 5
 
 [node name="CaseTitle" type="Label" parent="RoomCard/Row/Info"]
 unique_name_in_owner = true
@@ -65,17 +63,13 @@ custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 text = "FRAUDE Y CHANTAJE"
 
-[node name="RoomLabel" type="Label" parent="RoomCard/Row/Info"]
+[node name="Meta" type="HBoxContainer" parent="RoomCard/Row/Info"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Sin sala · elige cómo jugar"
-
-[node name="Meta" type="HBoxContainer" parent="RoomCard/Row/Info"]
-layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 7
 
 [node name="UsersIcon" type="Control" parent="RoomCard/Row/Info/Meta"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -85,6 +79,7 @@ color = Color(0.8, 0.84, 0.88, 1)
 
 [node name="CountLabel" type="Label" parent="RoomCard/Row/Info/Meta"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(38, 0)
 layout_mode = 2
 text = "1/4"
 
@@ -94,72 +89,102 @@ layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 4
 
-[node name="StatusChip" type="PanelContainer" parent="RoomCard/Row/Info"]
+[node name="StatusRow" type="HBoxContainer" parent="RoomCard/Row/Info"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusChip" type="PanelContainer" parent="RoomCard/Row/Info/StatusRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 4
 
-[node name="StatusChipLabel" type="Label" parent="RoomCard/Row/Info/StatusChip"]
+[node name="StatusChipRow" type="HBoxContainer" parent="RoomCard/Row/Info/StatusRow/StatusChip"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="StatusChipLabel" type="Label" parent="RoomCard/Row/Info/StatusRow/StatusChip/StatusChipRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "SIN SALA"
 
-[node name="Divider" type="VSeparator" parent="RoomCard/Row"]
-modulate = Color(1, 1, 1, 0.4)
+[node name="RoomLabel" type="Label" parent="RoomCard/Row/Info/StatusRow"]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+text = "Sin sala · elige cómo jugar"
+text_overrun_behavior = 3
+
+[node name="Divider" type="Control" parent="RoomCard/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+mouse_filter = 2
 
 [node name="CodeBox" type="VBoxContainer" parent="RoomCard/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(190, 0)
+custom_minimum_size = Vector2(206, 0)
 layout_mode = 2
 size_flags_vertical = 4
-theme_override_constants/separation = 4
+theme_override_constants/separation = 5
 
 [node name="CodeCaption" type="Label" parent="RoomCard/Row/CodeBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Código de sala"
-horizontal_alignment = 1
+text = "CÓDIGO DE SALA"
 
-[node name="CodeRow" type="HBoxContainer" parent="RoomCard/Row/CodeBox"]
-layout_mode = 2
-alignment = 1
-
-[node name="CodeLabel" type="Label" parent="RoomCard/Row/CodeBox/CodeRow"]
+[node name="CodePlate" type="PanelContainer" parent="RoomCard/Row/CodeBox"]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="CodeRow" type="HBoxContainer" parent="RoomCard/Row/CodeBox/CodePlate"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="CodeLabel" type="Label" parent="RoomCard/Row/CodeBox/CodePlate/CodeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 text = "------"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="CopyButton" type="Button" parent="RoomCard/Row/CodeBox/CodeRow"]
+[node name="CopyButton" type="Button" parent="RoomCard/Row/CodeBox/CodePlate/CodeRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_vertical = 4
 tooltip_text = "Copiar código"
+focus_mode = 0
 
 [node name="ShareButton" type="Button" parent="RoomCard/Row/CodeBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
+focus_mode = 0
 text = "Compartir"
 
 [node name="PlayBox" type="VBoxContainer" parent="RoomCard/Row"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(210, 0)
+custom_minimum_size = Vector2(212, 0)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 6
 
 [node name="QuickMatchButton" type="Button" parent="RoomCard/Row/PlayBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
+focus_mode = 0
 text = "Partida rápida"
 
 [node name="CreateRoomButton" type="Button" parent="RoomCard/Row/PlayBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
+focus_mode = 0
 text = "Crear sala privada"
 
 [node name="JoinRow" type="HBoxContainer" parent="RoomCard/Row/PlayBox"]
@@ -168,7 +193,7 @@ theme_override_constants/separation = 6
 
 [node name="CodeInput" type="LineEdit" parent="RoomCard/Row/PlayBox/JoinRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "CÓDIGO"
@@ -177,44 +202,64 @@ max_length = 8
 
 [node name="JoinButton" type="Button" parent="RoomCard/Row/PlayBox/JoinRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(70, 32)
+custom_minimum_size = Vector2(70, 30)
 layout_mode = 2
+focus_mode = 0
 text = "Unirse"
 
 [node name="QueueBox" type="VBoxContainer" parent="RoomCard/Row"]
 unique_name_in_owner = true
 visible = false
-custom_minimum_size = Vector2(190, 0)
+custom_minimum_size = Vector2(230, 0)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/separation = 8
 
-[node name="QueueLabel" type="Label" parent="RoomCard/Row/QueueBox"]
+[node name="QueueTop" type="HBoxContainer" parent="RoomCard/Row/QueueBox"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="QueueTexts" type="VBoxContainer" parent="RoomCard/Row/QueueBox/QueueTop"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 1
+
+[node name="QueueTitle" type="Label" parent="RoomCard/Row/QueueBox/QueueTop/QueueTexts"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "BUSCANDO PARTIDA"
+
+[node name="QueueLabel" type="Label" parent="RoomCard/Row/QueueBox/QueueTop/QueueTexts"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
 text = "En cola: 1/4 jugadores"
-horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="CancelQueueButton" type="Button" parent="RoomCard/Row/QueueBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
+focus_mode = 0
 text = "Cancelar búsqueda"
 
 [node name="RightColumn" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 11
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -236.0
+offset_left = -260.0
 offset_top = 74.0
 offset_right = -16.0
-offset_bottom = -130.0
+offset_bottom = -146.0
 grow_horizontal = 0
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="PlayersPanel" type="PanelContainer" parent="RightColumn"]
 unique_name_in_owner = true
@@ -222,36 +267,61 @@ layout_mode = 2
 
 [node name="PlayersBox" type="VBoxContainer" parent="RightColumn/PlayersPanel"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 8
 
-[node name="PlayersTitle" type="Label" parent="RightColumn/PlayersPanel/PlayersBox"]
+[node name="PlayersHeader" type="HBoxContainer" parent="RightColumn/PlayersPanel/PlayersBox"]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="PlayersIcon" type="Control" parent="RightColumn/PlayersPanel/PlayersBox/PlayersHeader"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("4")
+icon = "users"
+color = Color(0.898, 0.663, 0.235, 1)
+
+[node name="PlayersTitle" type="Label" parent="RightColumn/PlayersPanel/PlayersBox/PlayersHeader"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Jugadores (1/4)"
+size_flags_horizontal = 3
+text = "JUGADORES"
 
-[node name="PlayerList" type="VBoxContainer" parent="RightColumn/PlayersPanel/PlayersBox"]
+[node name="PlayersCount" type="Label" parent="RightColumn/PlayersPanel/PlayersBox/PlayersHeader"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 2
+text = "1/12"
+
+[node name="PlayerList" type="GridContainer" parent="RightColumn/PlayersPanel/PlayersBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 5
+columns = 2
 
 [node name="Spacer" type="Control" parent="RightColumn"]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="CasePanel" type="VBoxContainer" parent="RightColumn"]
+[node name="CasePanel" type="PanelContainer" parent="RightColumn"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 5
 
-[node name="CaseCaption" type="Label" parent="RightColumn/CasePanel"]
+[node name="CaseBox" type="VBoxContainer" parent="RightColumn/CasePanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CaseCaption" type="Label" parent="RightColumn/CasePanel/CaseBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "TIPO DE CASO"
 
-[node name="CaseList" type="VBoxContainer" parent="RightColumn/CasePanel"]
+[node name="CaseList" type="VBoxContainer" parent="RightColumn/CasePanel/CaseBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 4
 
 [node name="ChatPanel" type="PanelContainer" parent="."]
 unique_name_in_owner = true
@@ -260,7 +330,7 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -218.0
+offset_top = -206.0
 offset_right = 344.0
 offset_bottom = -16.0
 grow_vertical = 0
@@ -271,10 +341,10 @@ theme_override_constants/separation = 6
 
 [node name="ChatHeader" type="HBoxContainer" parent="ChatPanel/ChatBox"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 7
 
 [node name="ChatIcon" type="Control" parent="ChatPanel/ChatBox/ChatHeader"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
@@ -285,7 +355,13 @@ color = Color(0.898, 0.663, 0.235, 1)
 [node name="ChatTitle" type="Label" parent="ChatPanel/ChatBox/ChatHeader"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Chat de sala"
+size_flags_horizontal = 3
+text = "CHAT DE SALA"
+
+[node name="ChatOnline" type="Label" parent="ChatPanel/ChatBox/ChatHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+text = ""
 
 [node name="ChatScroll" type="ScrollContainer" parent="ChatPanel/ChatBox"]
 unique_name_in_owner = true
@@ -297,7 +373,7 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
+theme_override_constants/separation = 3
 
 [node name="ChatRow" type="HBoxContainer" parent="ChatPanel/ChatBox"]
 layout_mode = 2
@@ -315,26 +391,11 @@ max_length = 200
 unique_name_in_owner = true
 custom_minimum_size = Vector2(38, 34)
 layout_mode = 2
+focus_mode = 0
 tooltip_text = "Enviar"
 
-[node name="StatusLabel" type="Label" parent="."]
+[node name="Dock" type="PanelContainer" parent="."]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -420.0
-offset_top = -122.0
-offset_right = -16.0
-offset_bottom = -100.0
-grow_horizontal = 0
-grow_vertical = 0
-text = "Partida rápida · 4 jugadores"
-horizontal_alignment = 2
-
-[node name="Actions" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -342,21 +403,46 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -376.0
-offset_top = -94.0
+offset_top = -134.0
 offset_right = -16.0
 offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
-mouse_filter = 2
-theme_override_constants/separation = 10
 
-[node name="OptionsButton" type="Button" parent="Actions"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(88, 0)
+[node name="DockBox" type="VBoxContainer" parent="Dock"]
 layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="StatusRow" type="HBoxContainer" parent="Dock/DockBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="StatusLabel" type="Label" parent="Dock/DockBox/StatusRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+text = "Partida rápida · 4 jugadores"
+text_overrun_behavior = 3
+
+[node name="Actions" type="HBoxContainer" parent="Dock/DockBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="OptionsButton" type="Button" parent="Dock/DockBox/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 0)
+layout_mode = 2
+focus_mode = 0
 tooltip_text = "Opciones de la sala"
 
-[node name="OptionsBox" type="VBoxContainer" parent="Actions/OptionsButton"]
+[node name="OptionsBox" type="VBoxContainer" parent="Dock/DockBox/Actions/OptionsButton"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -364,28 +450,31 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_constants/separation = 2
 alignment = 1
 
-[node name="OptionsIcon" type="Control" parent="Actions/OptionsButton/OptionsBox"]
-custom_minimum_size = Vector2(26, 26)
+[node name="OptionsIcon" type="Control" parent="Dock/DockBox/Actions/OptionsButton/OptionsBox"]
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
 script = ExtResource("4")
 icon = "sliders"
 
-[node name="OptionsLabel" type="Label" parent="Actions/OptionsButton/OptionsBox"]
+[node name="OptionsLabel" type="Label" parent="Dock/DockBox/Actions/OptionsButton/OptionsBox"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Opciones"
 horizontal_alignment = 1
 
-[node name="StartButton" type="Button" parent="Actions"]
+[node name="StartButton" type="Button" parent="Dock/DockBox/Actions"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 size_flags_horizontal = 3
+focus_mode = 0
 
-[node name="StartContent" type="HBoxContainer" parent="Actions/StartButton"]
+[node name="StartContent" type="HBoxContainer" parent="Dock/DockBox/Actions/StartButton"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -393,19 +482,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 alignment = 1
 
-[node name="StartIcon" type="Control" parent="Actions/StartButton/StartContent"]
+[node name="StartIcon" type="Control" parent="Dock/DockBox/Actions/StartButton/StartContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 script = ExtResource("4")
 icon = "play"
 
-[node name="StartLabel" type="Label" parent="Actions/StartButton/StartContent"]
+[node name="StartLabel" type="Label" parent="Dock/DockBox/Actions/StartButton/StartContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "INICIAR"
