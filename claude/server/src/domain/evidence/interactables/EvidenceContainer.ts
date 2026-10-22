@@ -3,7 +3,7 @@ import type { IEvidenceDropTarget, IEvidenceSource, PickContext } from './Intera
 
 /** Contenedor con varias pruebas (baúl, armario). Entrega la primera que el jugador percibe. */
 export class EvidenceContainer implements IEvidenceSource, IEvidenceDropTarget {
-  readonly type = 'container';
+  readonly type: string = 'container';
   private readonly items: string[] = [];
 
   constructor(
@@ -28,4 +28,13 @@ export class EvidenceContainer implements IEvidenceSource, IEvidenceDropTarget {
 
   canAccept() { return this.items.length < this.capacity; }
   put(instanceId: string) { this.items.push(instanceId); }
+}
+
+/** Objetos caídos de un jugador silenciado o expulsado. Se queda aunque se levante. */
+export class BodyContainer extends EvidenceContainer {
+  override readonly type: string = 'body';
+
+  constructor(id: string, position: Vec2, radius: number, readonly ownerId: string, readonly label: string) {
+    super(id, position, radius);
+  }
 }

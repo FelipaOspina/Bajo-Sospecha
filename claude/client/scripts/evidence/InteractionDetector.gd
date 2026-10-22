@@ -27,7 +27,9 @@ func _physics_process(_delta: float) -> void:
 	var reach: float = role_manager.local_stats["interact_range"] if role_manager else 64.0
 	var best: Interactable = null
 	var best_d := INF
-	for i in _nearby:
+	# Los fantasmas y los noqueados no interactúan con nada.
+	var can_act := not GameState.is_ghost() and not GameState.is_knocked()
+	for i in (_nearby if can_act else []):
 		var d := global_position.distance_to(i.global_position)
 		if d <= reach + i.radius and d < best_d:
 			best = i

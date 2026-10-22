@@ -6,8 +6,10 @@ export interface IRoleAssignmentStrategy {
 }
 
 /**
- * 1. Cubre los mínimos de cada rol.
- * 2. Rellena el resto por sorteo ponderado (weight) entre roles con hueco (count.max).
+ * 1. Cubre los mínimos de cada rol (los que tienen minPlayers solo si n lo alcanza).
+ * 2. Roles con minPlayers <= n (y hueco): una plaza cada uno, del menor minPlayers al mayor
+ *    (p. ej. Seguridad desde 5, Cómplice desde 6).
+ * 3. Rellena el resto por sorteo ponderado (weight) entre roles con hueco (count.max).
  * 3. Baraja jugadores para que el orden de entrada no determine el rol.
  */
 export class WeightedRoleAssignment implements IRoleAssignmentStrategy {
@@ -19,15 +21,24 @@ export class WeightedRoleAssignment implements IRoleAssignmentStrategy {
       throw new Error(`El set "${config.id}" admite ${config.minPlayers}-${config.maxPlayers} jugadores (hay ${n})`);
     }
 
+    const eligible = config.roles.filter((r) => (r.minPlayers ?? 0) <= n);
     const pool: string[] = [];
     const used = new Map<string, number>();
-    for (const role of config.roles) {
+    for (const role of eligible) {
       for (let i = 0; i < role.count.min; i++) pool.push(role.id);
       used.set(role.id, role.count.min);
     }
 
+    const gated = eligible.filter((r) => r.minPlayers !== undefined).sort((a, b) => a.minPlayers! - b.minPlayers!);
+    for (const role of gated) {
+      if (pool.length >= n) break;
+      if (used.get(role.id)! >= role.count.max) continue;
+      pool.push(role.id);
+      used.set(role.id, used.get(role.id)! + 1);
+    }
+
     while (pool.length < n) {
-      const candidates = config.roles.filter((r) => (r.weight ?? 0) > 0 && used.get(r.id)! < r.count.max);
+      const candidates = eligible.filter((r) => (r.weight ?? 0) > 0 && used.get(r.id)! < r.count.max);
       const total = candidates.reduce((acc, r) => acc + (r.weight ?? 0), 0);
       if (total === 0) throw new Error(`No hay roles disponibles para completar ${n} jugadores`);
       let roll = this.rng.next() * total;

@@ -12,7 +12,9 @@ class Result:
 		return errors.is_empty() and data != null
 
 const KNOWN_ROOT_KEYS := ["format_version", "scenario_id", "title", "description", "player_count", "roles",
-	"evidence_spawns", "$schema", "phase_durations", "culprit_roles", "trial", "endings"]
+	"evidence_spawns", "$schema", "phase_durations", "culprit_roles", "trial", "endings", "emergency"]
+
+const KNOWN_POWERS := ["silence", "escort"]
 
 static func parse(raw: Variant) -> Result:
 	var res := Result.new()
@@ -76,6 +78,12 @@ static func parse(raw: Variant) -> Result:
 			mx += r.count["max"]
 		data.player_count = {"min": mn, "max": mx}
 
+	# motive_targets se comprueba al final: puede nombrar roles definidos después.
+	for role in data.roles:
+		for t in role.motive_targets:
+			if data.get_role(t) == null:
+				res.errors.append("rol \"%s\": motive_targets con rol inexistente \"%s\"" % [role.id, t])
+
 	if res.errors.is_empty():
 		res.data = data
 	return res
@@ -102,6 +110,13 @@ static func _parse_role(r: Variant, res: Result) -> ScenarioRoleData:
 		role.visibility = r["visibility"]
 	if r.get("modifiers") is Array:
 		role.modifiers = r["modifiers"]
+	role.min_players = int(r.get("min_players", 0))
+	for p in _list(r.get("powers")):
+		if not str(p) in KNOWN_POWERS:
+			res.errors.append("%s: poder desconocido \"%s\"" % [where, p])
+		role.powers.append(str(p))
+	for t in _list(r.get("motive_targets")):
+		role.motive_targets.append(str(t))
 
 	var objectives = r.get("secret_objectives")
 	if not objectives is Array:
@@ -158,7 +173,9 @@ static func _parse_spawn(e: Variant, data: ScenarioData, res: Result) -> Evidenc
 		s.benefits.append(str(r))
 	for r in e.get("harms", []):
 		s.harms.append(str(r))
-	for ref in s.benefits + s.harms:
+	for r in _list(e.get("incriminates")):
+		s.incriminates.append(str(r))
+	for ref in s.benefits + s.harms + s.incriminates:
 		if data.get_role(ref) == null:
 			res.errors.append("%s: referencia a rol inexistente \"%s\"" % [where, ref])
 	if e.get("content") is Dictionary:
@@ -176,6 +193,9 @@ static func _check_content(s: EvidenceSpawnData, res: Result) -> void:
 	var path := str(s.content.get(key, ""))
 	if path.is_empty() or not ResourceLoader.exists(path):
 		res.warnings.append("pista \"%s\": content.%s no encontrado (%s); se usará un marcador" % [s.id, key, path])
+
+static func _list(v: Variant) -> Array:
+	return v if v is Array else []
 
 static func _to_vector2(p: Variant) -> Variant:
 	if p is Array and p.size() == 2 and (p[0] is float or p[0] is int) and (p[1] is float or p[1] is int):

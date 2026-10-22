@@ -31,6 +31,12 @@ export interface RoleDefinition {
   /** Peso para rellenar plazas libres tras cubrir los mínimos. 0 = solo por mínimo. */
   weight?: number;
   knowsTeammates?: boolean;
+  /** Solo entra en el reparto con al menos estos jugadores (p. ej. el Cómplice desde 6). */
+  minPlayers?: number;
+  /** Poderes de rol con mecánica en la sala: "silence", "escort". */
+  powers?: string[];
+  /** Roles a los que este rol tiene motivo para silenciar siempre (p. ej. el CEO al Filtrador que le chantajea). */
+  motiveTargets?: string[];
   visibility: { default: VisibilityLevel; rules: VisibilityRule[] };
   objectives: ObjectiveDefinition[];
   modifiers: ModifierDefinition[];

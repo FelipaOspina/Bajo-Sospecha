@@ -14,6 +14,9 @@ extends Node
 ## Entrada directa a la sala con este código. Vacío = menú.
 @export var room_code := ""
 
+## Ascensor de carga (al empezar la partida suben todos a la planta 14). Por ruta.
+const ElevatorRide := preload("res://scripts/world3d/ElevatorRide.gd")
+
 @onready var role_manager: RoleManager = $RoleManager
 @onready var evidence_system: EvidenceSystem = $EvidenceSystem
 @onready var scenario_manager: ScenarioManager = $ScenarioManager
@@ -22,6 +25,9 @@ extends Node
 @onready var board: AssemblyBoardUI = $UI/AssemblyBoardUI
 @onready var resolution: ResolutionScreen = $UI/ResolutionScreen
 @onready var menu: MainMenu = $MainMenu
+@onready var hud = $UI/OfficeHUD
+@onready var in_game_menu = $UI/InGameMenu
+@onready var evidence_modal = $UI/EvidenceInspectionModal
 
 func _ready() -> void:
 	if OS.get_environment("ROOM") != "":
@@ -35,6 +41,28 @@ func _ready() -> void:
 	# La mesa pide exponer una carta de la mano → la lógica del juicio la envía al servidor.
 	board.evidence_presented.connect(func(e: EvidenceData, _player_id: String) -> void: assembly.present(e.instance_id))
 	resolution.back_to_menu_requested.connect(back_to_menu)
+
+	# Conexión del Menú en Partida (Dossier Ejecutivo: Opciones, Mochila, Estudio, Mapa)
+	if hud:
+		hud.in_game_menu_requested.connect(func() -> void:
+			if in_game_menu:
+				in_game_menu.open()
+		)
+	if in_game_menu:
+		in_game_menu.back_to_menu_requested.connect(back_to_menu)
+		in_game_menu.close_server_requested.connect(_on_close_server_requested)
+		in_game_menu.quit_game_requested.connect(func() -> void: get_tree().quit())
+		in_game_menu.inspect_evidence_requested.connect(func(e: EvidenceData) -> void:
+			if evidence_modal:
+				evidence_modal.open_evidence(e)
+		)
+
+	# ── Ascensor de carga: se muestra solo durante el briefing (escucha a GameState). ──
+	var elevator := ElevatorRide.new()
+	elevator.name = "ElevatorRide"
+	add_child(elevator)
+	# ── fin del ascensor ──
+
 	# Olfato del perro: marcas sobre los escondites (solo las ve quien la usa).
 	var scent := ScentMarkers.new()
 	scent.name = "ScentMarkers"
@@ -44,7 +72,8 @@ func _ready() -> void:
 	menu.set_case(title if title != "" else "Caso sin título", scenario_id)
 	if room_code != "":
 		EventBus.connected_to_server.connect(_on_connected_direct)
-		await Network.connect_to_server(player_name, room_code)
+		# Con ROOM en el entorno se entra directo: usa el nombre del perfil (PNAME) si no se fijó otro.
+		await Network.connect_to_server(Account.player_name if player_name == "Jugador" else player_name, room_code)
 	else:
 		menu.start()
 
@@ -64,3 +93,11 @@ func _on_disconnected(_reason: String) -> void:
 		Network.forget_room()
 		GameState.reset()
 		get_tree().reload_current_scene()
+
+## Cierra el servidor/desconecta sala actual y vuelve al menú principal limpio.
+func _on_close_server_requested() -> void:
+	if GameState.in_room():
+		Account.leave_room()
+		Network.disconnect_from_server()
+	get_tree().reload_current_scene()
+

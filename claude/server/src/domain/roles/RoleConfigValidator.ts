@@ -2,6 +2,9 @@ import type { ModifierRegistry } from './modifiers/ModifierRegistry.js';
 import type { ObjectiveRegistry } from './objectives/ObjectiveRegistry.js';
 import { VISIBILITY_ORDER, type RoleSetConfig } from './types.js';
 
+/** Poderes de rol con mecánica en la sala. */
+export const KNOWN_POWERS = ['silence', 'escort'];
+
 export class RoleConfigError extends Error {
   constructor(public readonly problems: string[]) {
     super(`Configuración de roles inválida:\n - ${problems.join('\n - ')}`);
@@ -36,6 +39,10 @@ export class RoleConfigValidator {
       ids.add(r.id);
       if (!r.team) p.push(`${where}: team requerido`);
       if (!r.count || r.count.min < 0 || r.count.max < r.count.min) p.push(`${where}: count inválido`);
+      if (r.minPlayers !== undefined && !Number.isInteger(r.minPlayers)) p.push(`${where}: minPlayers debe ser entero`);
+      if (r.powers !== undefined && (!Array.isArray(r.powers) || r.powers.some((x) => !KNOWN_POWERS.includes(x)))) {
+        p.push(`${where}: powers solo admite ${KNOWN_POWERS.join(', ')}`);
+      }
       sumMin += r.count?.min ?? 0;
       sumMax += r.count?.max ?? 0;
 

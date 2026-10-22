@@ -1,7 +1,11 @@
 class_name MissionsView
 extends MenuView
 ## Misiones: lo que da XP y monedas en cada partida (reglas reales del servidor).
+## Arriba, un acceso a la Ruta del Detective con los retos que tienes activos.
 ## Las misiones diarias y semanales llegarán más adelante.
+
+var path_card: PanelContainer
+var path_text: Label
 
 func build() -> void:
 	var layout := vbox(14)
@@ -9,6 +13,27 @@ func build() -> void:
 	add_child(layout)
 	layout.add_child(heading("MISIONES", 28))
 	layout.add_child(caption("Cada partida suma experiencia de perfil y del Executive Pass, y Monedas Corporativas.", 13))
+	path_card = card(Color(0.16, 0.13, 0.05, 0.92), Color(UiPalette.AMBER, 0.5))
+	path_card.name = "PathCard"
+	var prow := hbox(12)
+	path_card.add_child(prow)
+	var picon := MenuIcon.make("search", UiPalette.AMBER, 28)
+	picon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	prow.add_child(picon)
+	var pcol := vbox(2)
+	pcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	prow.add_child(pcol)
+	pcol.add_child(heading("Ruta del Detective", 17))
+	path_text = caption("", 13, Color("#FFE7A8"))
+	pcol.add_child(path_text)
+	var go := Button.new()
+	go.text = "  Ver la Ruta  "
+	go.custom_minimum_size.y = 36
+	go.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	cta(go)
+	go.pressed.connect(func() -> void: tab_requested.emit("ruta"))
+	prow.add_child(go)
+	layout.add_child(path_card)
 	var r := Progression.match_rewards()
 	var list := vbox(10)
 	layout.add_child(list)
@@ -21,6 +46,14 @@ func build() -> void:
 	sbox.add_child(MenuIcon.make("lock", DIM, 22))
 	sbox.add_child(caption("Misiones diarias y semanales: próximamente.", 14))
 	layout.add_child(soon)
+
+func refresh() -> void:
+	var open: Array = preload("res://scripts/menu/DetectivePath.gd").open_challenges(Account.level(), Account.profile)
+	var xp := 0
+	for l in open:
+		xp += int(l.get("challenge", {}).get("xp", 0))
+	path_text.text = ("Retos activos: %d (+%d XP). Próximo: %s" % [open.size(), xp, str(open[0].get("challenge", {}).get("text", ""))]) if not open.is_empty() \
+		else "Cada nivel enseña una mecánica y su reto da XP extra la primera vez."
 
 func _mission(title: String, reward: String, icon_name: String) -> PanelContainer:
 	var c := card()

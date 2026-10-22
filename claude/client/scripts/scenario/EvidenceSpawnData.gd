@@ -20,6 +20,7 @@ var weight := 1
 var tags: Array[String] = []
 var benefits: Array[String] = []   # ids de rol
 var harms: Array[String] = []      # ids de rol
+var incriminates: Array[String] = []  # roles a los que incrimina (móvil para silenciar a quien la lleve)
 var content: Dictionary = {}       # text / audio / image según el tipo
 
 ## Id del objeto del mapa; el servidor usa exactamente el mismo.

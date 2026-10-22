@@ -11,6 +11,8 @@ extends Area2D
 
 func _ready() -> void:
 	add_to_group("interactables")
+	input_pickable = true
+	input_event.connect(_on_input_event)
 	if not has_node("CollisionShape2D"):
 		var shape := CircleShape2D.new()
 		shape.radius = radius
@@ -19,10 +21,18 @@ func _ready() -> void:
 		col.shape = shape
 		add_child(col)
 
+func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
+	if GameState.is_ghost() or GameState.is_knocked():
+		return   # los fantasmas y los noqueados no interactúan
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		interact()
+	elif event is InputEventScreenTouch and event.pressed:
+		interact()
+
 ## Texto del indicador "[E] ..." cuando el jugador lo tiene enfocado.
 func get_prompt() -> String:
 	return prompt_text
 
-## Lo llama EvidenceSystem cuando el jugador pulsa la tecla de interacción.
+## Lo llama EvidenceSystem cuando el jugador pulsa la tecla o hace clic.
 func interact() -> void:
 	pass

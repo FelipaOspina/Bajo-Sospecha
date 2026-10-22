@@ -16,6 +16,8 @@ signal online_changed(online: bool)
 ## Respuesta del servidor a una acción del menú (action = nombre de la intención).
 signal action_done(action: String, seq: int)
 signal action_failed(action: String, reason: String, message: String)
+## Ajustes de la Ruta del Detective cambiados (consejos en partida, lecciones vistas).
+signal path_settings_changed
 
 const SAVE_PATH := "user://account.cfg"
 const MAX_NAME := 24
@@ -55,8 +57,28 @@ var profile: Dictionary = {}
 var online := false
 var queue_position := 0
 var queue_waiting := 0
-var match_size := 4
+## Plazas máximas de la partida pública (matchSize de "queued"); arranca con queue_min_size.
+var match_size := 12
+var queue_min_size := 4
+## Hora del servidor (ms) a la que arranca la partida pública; -1 sin cuenta atrás.
+var queue_starts_at := -1
 var last_rewards: Dictionary = {}
+
+# ── Ruta del Detective (se guarda en user://account.cfg) ──
+## Consejos contextuales en las primeras partidas (nivel < hint_max_level). Configuración.
+var hints_enabled := true
+## Ya se ofreció la práctica «Primer día en NexusCore» al abrir el juego por primera vez.
+var tutorial_seen := false
+## Práctica terminada sin conexión: su XP se pide al servidor en la próxima conexión.
+var tutorial_reward_pending := false
+## Lecciones de la Ruta ya abiertas (para marcar las nuevas).
+var seen_lessons: Array = []
+## Recompensas con subida de nivel o retos cumplidos aún sin celebrar (MainMenu las muestra
+## al volver al menú: la escena se recarga tras la partida y el autoload las conserva).
+var pending_celebration: Dictionary = {}
+## Último nivel y XP pintados en la cabecera (para animar la barra al subir de nivel).
+var shown_level := -1
+var shown_xp_into := -1
 
 var _actions := {}   # seq -> nombre de la intención (para traducir acks y rechazos)
 var _from_env := false
@@ -66,6 +88,23 @@ func _ready() -> void:
 	_load()
 	Network.message_received.connect(_on_message)
 	EventBus.disconnected_from_server.connect(func(_reason: String) -> void: _set_online(false))
+
+## Segundos que faltan para que arranque la partida pública (-1 sin cuenta atrás).
+func queue_seconds_left() -> int:
+	if queue_starts_at < 0 or queue_position <= 0:
+		return -1
+	return maxi(0, ceili((float(queue_starts_at) - Network.server_time_ms()) / 1000.0))
+
+## "Buscando partida 5/8 · empieza en 23 s" (o "· faltan 2 para empezar").
+func queue_text() -> String:
+	var text := "Buscando partida %d/%d" % [queue_waiting, match_size]
+	var left := queue_seconds_left()
+	if left >= 0:
+		text += " · empieza en %d s" % left
+	elif queue_waiting < queue_min_size:
+		var missing := queue_min_size - queue_waiting
+		text += " · falta%s %d para empezar" % ["" if missing == 1 else "n", missing]
+	return text
 
 # ───── Conexión ─────
 
@@ -185,6 +224,73 @@ func is_equipped(cosmetic_id: String) -> bool:
 func buy_premium() -> int:
 	return _send(Protocol.I_BUY_PREMIUM)
 
+# ───── Ruta del Detective ─────
+
+## XP total del perfil (la curva de niveles está en DetectivePath.gd).
+func xp_total() -> int:
+	return int(profile.get("xp", 0))
+
+func path_progress() -> Dictionary:
+	var p = profile.get("path", {})
+	return p if p is Dictionary else {}
+
+func tutorial_done() -> bool:
+	return bool(path_progress().get("tutorialDone", false))
+
+## La práctica ha terminado: pide su XP (una vez por perfil; el servidor lo comprueba).
+## Sin conexión (o con la práctica aún enganchada a Network) queda pendiente.
+func complete_tutorial() -> void:
+	tutorial_seen = true
+	if tutorial_done():
+		tutorial_reward_pending = false
+	else:
+		tutorial_reward_pending = true
+	_save()
+	flush_tutorial_reward()
+
+## Si hay recompensa de práctica pendiente y se puede hablar con el servidor, la pide.
+func flush_tutorial_reward() -> int:
+	if not tutorial_reward_pending or not online or Network.local_server != null:
+		return -1
+	if has_profile() and tutorial_done():
+		tutorial_reward_pending = false
+		_save()
+		return -1
+	return _send(Protocol.I_CLAIM_TUTORIAL)
+
+func set_hints_enabled(on: bool) -> void:
+	hints_enabled = on
+	_save()
+	path_settings_changed.emit()
+
+func set_tutorial_seen() -> void:
+	tutorial_seen = true
+	_save()
+
+func is_lesson_seen(level_n: int) -> bool:
+	return float(level_n) in seen_lessons.map(func(l): return float(l))
+
+func mark_lesson_seen(level_n: int) -> void:
+	if is_lesson_seen(level_n):
+		return
+	seen_lessons.append(level_n)
+	_save()
+	path_settings_changed.emit()
+
+## Consejos en partida: activados y por debajo del nivel de la Ruta en que dejan de salir.
+func wants_hints() -> bool:
+	return hints_enabled and level() < int(Progression.data().get("detective_path", {}).get("hint_max_level", 5))
+
+## Celebración pendiente (y la borra).
+func take_celebration() -> Dictionary:
+	var c := pending_celebration
+	pending_celebration = {}
+	return c
+
+## Perfil fijado por el entorno (bots y pruebas con varios clientes): sin avisos de primera vez.
+func from_env() -> bool:
+	return _from_env
+
 func has_profile() -> bool:
 	return not profile.is_empty()
 
@@ -237,15 +343,27 @@ func _on_message(msg: Dictionary) -> void:
 			profile = msg.get("profile", {})
 			profile_id = str(profile.get("id", profile_id))
 			player_name = str(profile.get("name", player_name))
+			if tutorial_reward_pending and tutorial_done():
+				tutorial_reward_pending = false
 			_save()
 			profile_updated.emit(profile)
+			if tutorial_reward_pending:
+				flush_tutorial_reward()
 		Protocol.M_REWARDS:
 			last_rewards = msg.get("rewards", {})
+			if last_rewards.get("source") == "tutorial":
+				tutorial_reward_pending = false
+				_save()
+			if int(last_rewards.get("levelsGained", 0)) > 0 or not last_rewards.get("challenges", []).is_empty() \
+					or last_rewards.get("source") == "tutorial":
+				pending_celebration = last_rewards
 			rewards_granted.emit(last_rewards)
 		Protocol.M_QUEUED:
 			queue_position = int(msg.get("position", 0))
 			queue_waiting = int(msg.get("waiting", 0))
 			match_size = int(msg.get("matchSize", match_size))
+			queue_min_size = int(msg.get("minSize", queue_min_size))
+			queue_starts_at = int(msg["startsAt"]) if msg.get("startsAt") != null else -1
 			queue_changed.emit(queue_position, queue_waiting, match_size)
 		Protocol.M_ACK:
 			var seq := int(msg.get("seq", -1))
@@ -256,8 +374,13 @@ func _on_message(msg: Dictionary) -> void:
 			var seq := int(msg.get("seq", -1))
 			if _actions.has(seq):
 				var reason := str(msg.get("reason", ""))
-				action_failed.emit(_actions[seq], reason, error_text(reason))
+				var action: String = _actions[seq]
 				_actions.erase(seq)
+				if action == Protocol.I_CLAIM_TUTORIAL and reason == "already_claimed":
+					tutorial_reward_pending = false   # ya la tenía: nada que avisar
+					_save()
+					return
+				action_failed.emit(action, reason, error_text(reason))
 
 func _send(type: String, payload: Dictionary = {}) -> int:
 	var seq: int = net.send_intent(type, payload) if net else -1
@@ -291,6 +414,11 @@ func _load() -> void:
 		player_name = str(cfg.get_value("account", "name", player_name))
 		ChibiBaker.mode = str(cfg.get_value("video", "avatars", "auto"))
 		PetSfx.volume = clampf(float(cfg.get_value("audio", "pet_volume", PetSfx.volume)), 0.0, 1.0)
+		hints_enabled = bool(cfg.get_value("path", "hints", true))
+		tutorial_seen = bool(cfg.get_value("path", "tutorial_seen", false))
+		tutorial_reward_pending = bool(cfg.get_value("path", "tutorial_pending", false))
+		var seen = cfg.get_value("path", "seen_lessons", [])
+		seen_lessons = seen if seen is Array else []
 	if env_name != "":
 		player_name = env_name
 
@@ -302,6 +430,10 @@ func _save() -> void:
 	cfg.set_value("account", "name", player_name)
 	cfg.set_value("video", "avatars", ChibiBaker.mode)
 	cfg.set_value("audio", "pet_volume", PetSfx.volume)
+	cfg.set_value("path", "hints", hints_enabled)
+	cfg.set_value("path", "tutorial_seen", tutorial_seen)
+	cfg.set_value("path", "tutorial_pending", tutorial_reward_pending)
+	cfg.set_value("path", "seen_lessons", seen_lessons)
 	cfg.save(SAVE_PATH)
 
 ## Calidad de los avatares: "auto" (horneados en móvil y web), "off" (siempre en vivo,

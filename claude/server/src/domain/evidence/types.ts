@@ -20,6 +20,8 @@ export interface EvidenceDefinition {
   access?: EvidenceAccess;
   /** Acciones con tiempo de canalización (borrar, sacar copia) y quién puede hacerlas. */
   actions?: EvidenceActionConfig[];
+  /** Roles a los que incrimina: quien la lleva (o la copió) da motivo a esos roles para silenciarle. */
+  incriminates?: string[];
 }
 
 export type EvidenceActionKind = 'delete' | 'backup';

@@ -42,6 +42,12 @@ export function roomPosition(roomIndex: number, slot: number) {
   return { x: 200 + (roomIndex % 3) * 440 + slot * 70, y: 150 + Math.floor(roomIndex / 3) * 400 };
 }
 
+/** Posición escrita en el caso, si la trae y es válida. */
+export function explicitPosition(p: any): { x: number; y: number } | null {
+  const [x, y] = Array.isArray(p) ? p : [p?.x, p?.y];
+  return Number.isFinite(x) && Number.isFinite(y) ? { x: Number(x), y: Number(y) } : null;
+}
+
 export function normalizeLegacyCase(raw: any): { scenario: ScenarioFile; warnings: string[] } {
   const warnings: string[] = [];
   const rooms: string[] = Array.isArray(raw.setting?.rooms) ? [...raw.setting.rooms] : [];
@@ -60,12 +66,20 @@ export function normalizeLegacyCase(raw: any): { scenario: ScenarioFile; warning
 
   const roles: ScenarioRole[] = (raw.roles ?? []).map((r: any) => {
     if (r.hidden_ability) warnings.push(`rol ${r.role_id}: hidden_ability "${r.hidden_ability.name}" aún no tiene mecánica; se ignora`);
+    // Campos opcionales (partidas de 4 a 12): team, count, min_players, powers, knows_teammates, motive_targets.
+    const count = r.count && Number.isInteger(r.count.min) && Number.isInteger(r.count.max)
+      ? { min: Number(r.count.min), max: Number(r.count.max) } : { min: 1, max: 1 };
     return {
       id: r.role_id,
       name: r.display_name ?? r.role_id,
       description: r.starting_knowledge ?? '',
-      team: slug(String(r.alignment ?? r.role_id).split('/')[0] ?? r.role_id),
-      count: { min: 1, max: 1 },
+      team: r.team ? String(r.team) : slug(String(r.alignment ?? r.role_id).split('/')[0] ?? r.role_id),
+      count,
+      ...(count.min === 0 ? { weight: 1 } : {}),
+      ...(Number.isInteger(r.min_players) ? { min_players: Number(r.min_players) } : {}),
+      ...(Array.isArray(r.powers) && r.powers.length ? { powers: r.powers.map(String) } : {}),
+      ...(r.knows_teammates ? { knows_teammates: true } : {}),
+      ...(Array.isArray(r.motive_targets) && r.motive_targets.length ? { motive_targets: r.motive_targets.map(String) } : {}),
       secret_objectives: [...(r.individual_objectives ?? [])],
       modifiers: [],
     } satisfies ScenarioRole;
@@ -94,24 +108,32 @@ export function normalizeLegacyCase(raw: any): { scenario: ScenarioFile; warning
       tags: String(c.type ?? '').split('/').map((t) => slug(t)).filter(Boolean),
       medium: String(c.type ?? '').split('/').map((t) => slug(t)).filter(Boolean).join('/'),
       room: c.room,
-      position: roomPosition(roomIndex, slot),
+      // El caso puede fijar la posición en el plano ("position": {x, y} o [x, y]).
+      position: explicitPosition(c.position) ?? roomPosition(roomIndex, slot),
       pocketable: req.can_be_pocketed ?? true,
       weight: c.evidence_weight ?? 1,
       benefits: backers,
       harms: deleters,
       ...(actions.length ? { actions } : {}),
+      ...(Array.isArray(c.incriminates) && c.incriminates.length ? { incriminates: c.incriminates.map(String) } : {}),
     } satisfies ScenarioEvidenceSpawn;
   });
 
   let playerCount = raw.player_count;
-  if (playerCount && playerCount.max > roles.length) {
-    warnings.push(`player_count.max (${playerCount.max}) se reduce a ${roles.length}: solo hay ${roles.length} roles`);
-    playerCount = { min: Math.min(playerCount.min, roles.length), max: roles.length };
+  const seats = roles.reduce((acc, r) => acc + (r.count?.max ?? 1), 0);
+  if (playerCount && playerCount.max > seats) {
+    warnings.push(`player_count.max (${playerCount.max}) se reduce a ${seats}: solo hay ${seats} plazas de rol`);
+    playerCount = { min: Math.min(playerCount.min, seats), max: seats };
   }
 
   const flow = raw.turn_and_phase_flow ?? {};
   const confrontationRules: string = (flow.phase_2_confrontation?.rules ?? []).join(' ');
   const maxPresented = Number(/hasta\s+(\d+)\s+evidencias/i.exec(confrontationRules)?.[1] ?? 2);
+  // Reunión de emergencia (reportar un cuerpo): duración, máximo por partida y roles cuya expulsión acaba la partida.
+  const emergencyFlow = flow.phase_emergency ?? {};
+  const endsGame: Record<string, string> = Object.fromEntries((emergencyFlow.expel_ends_game_roles ?? [])
+    .filter((r: string) => roleById.has(r))
+    .map((r: string) => [r, `acusar_${slug(r)}`]));
   if (raw.victory_resolution) warnings.push('victory_resolution es texto libre: se usa el final por defecto (¿se acusó al culpable?)');
   if (raw.sabotage_events?.length) warnings.push(`${raw.sabotage_events.length} sabotajes ignorados (aún no hay mecánica)`);
 
@@ -127,7 +149,14 @@ export function normalizeLegacyCase(raw: any): { scenario: ScenarioFile; warning
       phase_durations: {
         ...(flow.phase_1_exploration?.duration_seconds ? { investigation: flow.phase_1_exploration.duration_seconds } : {}),
         ...(flow.phase_2_confrontation?.duration_seconds ? { discussion: flow.phase_2_confrontation.duration_seconds } : {}),
+        ...(emergencyFlow.duration_seconds ? { emergency: emergencyFlow.duration_seconds } : {}),
       },
+      ...(emergencyFlow.max_per_match || Object.keys(endsGame).length
+        ? { emergency: {
+          ...(emergencyFlow.max_per_match ? { max_per_match: Number(emergencyFlow.max_per_match) } : {}),
+          expel_ends_game: endsGame,
+        } }
+        : {}),
       // "Se vota quién es despedido": una opción por personaje, con su recuento de votos.
       trial: {
         max_presented_per_player: maxPresented,

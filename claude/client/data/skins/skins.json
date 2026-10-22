@@ -1,10 +1,10 @@
 {
-  "_comentario": "Catálogo de skins de animales. El servidor asigna una skin libre a cada jugador al entrar (o la que elija en el lobby). assign_by_role=true pondría la skin de role_skins al empezar la partida, pero delata el rol secreto a todos: déjalo en false salvo en partidas de prueba. Los PNG van en client/assets/sprites/skins/<id>/{frente,lado,espalda,caminando}.png; mientras falten, el cliente dibuja el chibi procedural con los colores de abajo.",
+  "_comentario": "Catálogo de skins de animales acorde al diseño visual 2.4D corporativo (Zorro con hoodie azul, Gato con hoodie morado, CEO pingüino de traje y corbata roja, Panda con chaqueta cian, León con chaqueta azul, Conejo con hoodie rosa, Oso con hoodie verde y Dino).",
   "assign_by_role": false,
   "role_skins": {
-    "ROLE_CEO": "leon",
+    "ROLE_CEO": "pinguino",
     "ROLE_CTO": "lobo",
-    "ROLE_INVESTOR": "tigre",
+    "ROLE_INVESTOR": "leon",
     "ROLE_LEAKER": "zorro"
   },
   "views": [
@@ -15,23 +15,153 @@
   ],
   "skins": [
     {
-      "id": "leon",
-      "name": "León",
+      "id": "zorro",
+      "name": "Zorro",
+      "ear_type": "tall_pointed",
+      "fur": "#EE7A2A",
+      "fur_light": "#FFF1E6",
+      "outfit": "#2563EB",
+      "accent": "#93C5FD",
+      "scale_body": [
+        0.92,
+        0.96
+      ],
+      "style": "hoodie",
+      "tail": "bushy",
+      "shoes": "#F1F5F9",
+      "bag": "#1E293B",
+      "eye": "#9A3412"
+    },
+    {
+      "id": "gato",
+      "name": "Gato",
+      "ear_type": "pointed",
+      "fur": "#8E9AA8",
+      "fur_light": "#F1F5F9",
+      "outfit": "#7C3AED",
+      "accent": "#C4B5FD",
+      "scale_body": [
+        0.92,
+        0.98
+      ],
+      "style": "hoodie",
+      "tail": "thin",
+      "shoes": "#F1F5F9",
+      "bag": "#4C1D95",
+      "eye": "#10B981"
+    },
+    {
+      "id": "pinguino",
+      "name": "Pingüino",
+      "ear_type": "none",
+      "snout": "beak",
+      "patches": "face",
+      "fur": "#2B3D55",
+      "fur_light": "#FFFFFF",
+      "outfit": "#1E293B",
+      "accent": "#DC2626",
+      "scale_body": [
+        1.0,
+        1.04
+      ],
+      "style": "suit",
+      "tail": "none",
+      "shoes": "#2563EB",
+      "bag": "#1E293B",
+      "eye": "#0F172A"
+    },
+    {
+      "id": "panda",
+      "name": "Panda",
       "ear_type": "round",
-      "mane": "#A8642A",
-      "fur": "#E0A84B",
-      "fur_light": "#F6DDB0",
-      "outfit": "#1E2A4A",
-      "accent": "#FF334B",
+      "ear_color": "#18181B",
+      "patches": "panda",
+      "fur": "#F8FAFC",
+      "fur_light": "#FFFFFF",
+      "outfit": "#0891B2",
+      "accent": "#67E8F9",
       "scale_body": [
         1.1,
         1.0
       ],
-      "style": "suit",
+      "style": "hoodie",
+      "tail": "puff",
+      "shoes": "#F1F5F9",
+      "bag": "#18181B",
+      "eye": "#18181B"
+    },
+    {
+      "id": "leon",
+      "name": "León",
+      "ear_type": "round",
+      "mane": "#8A4515",
+      "fur": "#E59E27",
+      "fur_light": "#FEF3C7",
+      "outfit": "#1D4ED8",
+      "accent": "#93C5FD",
+      "scale_body": [
+        1.1,
+        1.0
+      ],
+      "style": "hoodie",
       "tail": "thin",
       "shoes": "#F1F5F9",
-      "bag": "#7C2D12",
-      "eye": "#8A5A1C"
+      "bag": "#1E293B",
+      "eye": "#854D0E"
+    },
+    {
+      "id": "conejo",
+      "name": "Conejo",
+      "ear_type": "long",
+      "fur": "#F8FAFC",
+      "fur_light": "#FFFFFF",
+      "outfit": "#F472B6",
+      "accent": "#FDF2F8",
+      "scale_body": [
+        0.9,
+        0.97
+      ],
+      "style": "hoodie",
+      "tail": "puff",
+      "shoes": "#FDF2F8",
+      "bag": "#831843",
+      "eye": "#DB2777"
+    },
+    {
+      "id": "oso",
+      "name": "Oso",
+      "ear_type": "round",
+      "fur": "#78350F",
+      "fur_light": "#D97706",
+      "outfit": "#16A34A",
+      "accent": "#86EFAC",
+      "scale_body": [
+        1.15,
+        1.02
+      ],
+      "style": "hoodie",
+      "tail": "puff",
+      "shoes": "#FEF08A",
+      "bag": "#1E293B",
+      "eye": "#451A03"
+    },
+    {
+      "id": "perro",
+      "name": "Perro",
+      "ear_type": "floppy",
+      "fur": "#B98352",
+      "fur_light": "#F2E1CB",
+      "outfit": "#1F2937",
+      "accent": "#4ADE80",
+      "scale_body": [
+        1.0,
+        1.0
+      ],
+      "style": "hoodie",
+      "tail": "bushy",
+      "shoes": "#22C55E",
+      "bag": "#78350F",
+      "eye": "#5B3A1E"
     },
     {
       "id": "lobo",
@@ -39,7 +169,7 @@
       "ear_type": "pointed",
       "fur": "#8A93A3",
       "fur_light": "#DCE1E8",
-      "outfit": "#1A3F59",
+      "outfit": "#1E293B",
       "accent": "#00E5FF",
       "scale_body": [
         0.95,
@@ -70,116 +200,6 @@
       "eye": "#B7791F"
     },
     {
-      "id": "zorro",
-      "name": "Zorro",
-      "ear_type": "tall_pointed",
-      "fur": "#D9622B",
-      "fur_light": "#F8E8DA",
-      "outfit": "#262838",
-      "accent": "#9A9AB3",
-      "scale_body": [
-        0.9,
-        0.95
-      ],
-      "style": "hoodie",
-      "tail": "bushy",
-      "shoes": "#E2E8F0",
-      "bag": "#3F3F46",
-      "eye": "#9A3412"
-    },
-    {
-      "id": "gato",
-      "name": "Gato",
-      "ear_type": "pointed",
-      "fur": "#5B5B6B",
-      "fur_light": "#D4D4DE",
-      "outfit": "#2E1F4F",
-      "accent": "#B48CFF",
-      "scale_body": [
-        0.92,
-        0.98
-      ],
-      "style": "suit",
-      "tail": "thin",
-      "shoes": "#A78BFA",
-      "bag": "#27272A",
-      "eye": "#4ADE80"
-    },
-    {
-      "id": "perro",
-      "name": "Perro",
-      "ear_type": "floppy",
-      "fur": "#B98352",
-      "fur_light": "#F2E1CB",
-      "outfit": "#1F2937",
-      "accent": "#4ADE80",
-      "scale_body": [
-        1.0,
-        1.0
-      ],
-      "style": "hoodie",
-      "tail": "bushy",
-      "shoes": "#22C55E",
-      "bag": "#78350F",
-      "eye": "#5B3A1E"
-    },
-    {
-      "id": "oso",
-      "name": "Oso",
-      "ear_type": "round",
-      "fur": "#7A4E2D",
-      "fur_light": "#C9A07A",
-      "outfit": "#173A2A",
-      "accent": "#E5A93C",
-      "scale_body": [
-        1.15,
-        1.02
-      ],
-      "style": "hoodie",
-      "tail": "puff",
-      "shoes": "#F59E0B",
-      "bag": "#14532D",
-      "eye": "#3B2414"
-    },
-    {
-      "id": "panda",
-      "name": "Panda",
-      "ear_type": "round",
-      "ear_color": "#1A1A22",
-      "patches": "panda",
-      "fur": "#F1F1EE",
-      "fur_light": "#FFFFFF",
-      "outfit": "#111827",
-      "accent": "#FF334B",
-      "scale_body": [
-        1.1,
-        1.0
-      ],
-      "style": "suit",
-      "tail": "puff",
-      "shoes": "#EF4444",
-      "bag": "#1F2937",
-      "eye": "#334155"
-    },
-    {
-      "id": "conejo",
-      "name": "Conejo",
-      "ear_type": "long",
-      "fur": "#E9E2DF",
-      "fur_light": "#FFFFFF",
-      "outfit": "#5B1E3A",
-      "accent": "#F9A8D4",
-      "scale_body": [
-        0.9,
-        0.97
-      ],
-      "style": "hoodie",
-      "tail": "puff",
-      "shoes": "#F9A8D4",
-      "bag": "#831843",
-      "eye": "#BE185D"
-    },
-    {
       "id": "mapache",
       "name": "Mapache",
       "ear_type": "round",
@@ -196,9 +216,7 @@
       "tail": "ringed",
       "shoes": "#06B6D4",
       "bag": "#111827",
-      "eye": "#334155",
-      "hat": "cap",
-      "hat_color": "#0F172A"
+      "eye": "#334155"
     },
     {
       "id": "buho",
@@ -218,29 +236,7 @@
       "shoes": "#FBBF24",
       "bag": "#422006",
       "eye": "#F59E0B"
-    },
-    {
-      "id": "pinguino",
-      "name": "Pingüino",
-      "ear_type": "none",
-      "snout": "beak",
-      "patches": "face",
-      "fur": "#1F2937",
-      "fur_light": "#F8FAFC",
-      "outfit": "#2B5DAA",
-      "accent": "#FF334B",
-      "scale_body": [
-        1.0,
-        1.04
-      ],
-      "style": "hoodie",
-      "tail": "none",
-      "shoes": "#F8FAFC",
-      "bag": "#0F172A",
-      "eye": "#1E293B",
-      "hat": "cap",
-      "hat_color": "#1E3A8A"
     }
   ],
-  "_campos": "fur/fur_light: pelaje; outfit: ropa; accent: corbata o acreditación (en tu propia vista lleva el color de tu rol); style: suit (traje) | hoodie (sudadera con capucha); ear_type: round | round_stripes | pointed | tall_pointed | long | floppy | tufts | none; tail: bushy | thin | striped | ringed | puff | none; shoes: zapatillas; bag: mochila; eye: iris; hat: cap (opcional); mane, patches (panda | mask | face), snout (beak), ear_color, scale_body [ancho, alto] de la cabeza."
+  "_campos": "fur/fur_light: pelaje; outfit: ropa; accent: corbata o acreditación; style: suit | hoodie; ear_type: round | round_stripes | pointed | tall_pointed | long | floppy | tufts | none; tail: bushy | thin | striped | ringed | puff | none; shoes: zapatillas; bag: mochila; eye: iris; mane, patches, snout, ear_color, scale_body."
 }

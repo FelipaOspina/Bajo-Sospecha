@@ -1,5 +1,6 @@
 extends Node
 ## Prueba sin servidor: godot --headless res://tests/NightLightingTest.tscn
+## La noche de auditoría ahora la pinta la vista 3D (World3DView).
 
 var _failures := 0
 
@@ -8,16 +9,22 @@ func _ready() -> void:
 	main.scenario_id = "caso_fraude_tech_startup"
 	add_child(main)
 	await get_tree().process_frame
-	var night: NightLighting = main.get_node("Map/NightLighting")
-	var mod := night.get_node_or_null("NightModulate") as CanvasModulate
-	_check(mod != null and mod.color.get_luminance() < 0.3, "el mapa tiene un CanvasModulate oscuro")
-	var spots: Array = main.get_node("Map/Evidence").get_children()
-	_check(spots.size() > 0 and spots.all(func(s): return s.get_node_or_null("NightLight") is PointLight2D), "cada pista lleva su luz ámbar")
-	var p := Player.new()
+	var view: World3DView = main.get_node("World3D")
+	_check(view.layer < 0, "la vista 3D va detrás del juego 2D")
+	_check(view.office != null and view.office.get_child_count() > 50, "la oficina 3D está construida")
+	var env: Environment = view.viewport.get_node("WorldEnvironment").environment
+	_check(env.background_color.get_luminance() < 0.1, "ambiente nocturno")
+	view._sync_evidence()   # fuera de la exploración la vista no se actualiza sola
+	_check(view._markers.size() == main.get_node("Map/Evidence").get_child_count(), "cada pista tiene su aro y su luz en 3D")
+	var p: PlayerAvatar = load("res://scenes/player/PlayerAvatar.tscn").instantiate()
+	p.is_local = true
 	main.get_node("Map/Players").add_child(p)
-	_check(p.get_node_or_null("NightLight") is PointLight2D, "los jugadores que entran llevan su luz")
+	await get_tree().process_frame
+	view._sync_avatars(0.016)
+	_check(view.actors.get_children().any(func(n): return n is PlushAvatar3D), "los jugadores que entran tienen su personaje 3D")
+	_check(view._local_light.visible, "el jugador local lleva linterna")
 	var modal: CanvasLayer = main.get_node("UI/EvidenceInspectionModal")
-	_check(modal.layer > 0, "el modal vive en su propia capa y no se oscurece")
+	_check(modal.layer > 0, "el modal vive en su propia capa")
 
 	print("NightLightingTest: ", "OK" if _failures == 0 else "%d fallos" % _failures)
 	get_tree().quit(1 if _failures > 0 else 0)

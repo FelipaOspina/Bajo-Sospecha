@@ -60,18 +60,18 @@ test('juicio completo: exponer pruebas, votar una decisión narrativa y resolver
   });
 
   // El CTO saca copia de los logs (6 s) y foto de la laptop (3 s): son fijos, se lleva las copias.
-  walkTo('cto', 200, 150);
+  walkTo('cto', 460, 120);
   const logsId = snap('cto').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents[0]!.instanceId;
   assert.equal(send('cto', { t: 'channel_start', evidenceInstanceId: logsId, action: 'backup' }), 'ok');
   advance(6_000);
-  walkTo('cto', 640, 120);
+  walkTo('cto', 1080, 60);
   const laptopId = snap('cto').interactables.find((i) => i.id === 'spawn_CLUE_UNLOCKED_LAPTOP')!.contents[0]!.instanceId;
   assert.equal(send('cto', { t: 'channel_start', evidenceInstanceId: laptopId, action: 'backup' }), 'ok');
   advance(3_000);
   assert.equal(snap('cto').you!.inventory.filter((e) => e.isCopy).length, 2);
   assert.equal(snap('ceo').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents.length, 1, 'el original sigue en su sitio');
   // El inversor recoge el pendrive.
-  walkTo('inv', 1050, 550);
+  walkTo('inv', 1300, 780);
   assert.equal(send('inv', { t: 'interact', interactableId: 'spawn_CLUE_ENCRYPTED_PENDRIVE' }), 'ok');
 
   nextPhase();
@@ -85,7 +85,7 @@ test('juicio completo: exponer pruebas, votar una decisión narrativa y resolver
   const deck = snap('inv').trial.deck;
   assert.equal(deck.length, 2);
   assert.equal(deck[0]!.evidence.name, 'Logs de Auditoría en Servidor Central');
-  assert.equal(snap('inv').trial.options.map((o) => o.id).join(), 'despedir_ceo,despedir_cto,despedir_filtrador,abstain');
+  assert.equal(snap('inv').trial.options.map((o) => o.id).join(), 'despedir_ceo,despedir_cto,despedir_filtrador,despedir_abogado,despedir_cfo,abstain');   // fusión 8p: +abogado, +cfo
 
   nextPhase();
   assert.equal(room.phase, 'voting');
@@ -108,9 +108,9 @@ test('acciones canalizadas: el CEO purga los logs; moverse interrumpe; solo lo v
   const { room, inbox, send, walkTo, nextPhase, advance, snap } = await setupRoom(await nexus(), {
     ceo: 'ROLE_CEO', cto: 'ROLE_CTO', inv: 'ROLE_INVESTOR', leak: 'ROLE_LEAKER',
   });
-  walkTo('ceo', 200, 150);
-  walkTo('cto', 250, 200);           // cerca: verá la barra
-  walkTo('inv', 1050, 550);          // lejos: no la verá
+  walkTo('ceo', 460, 120);
+  walkTo('cto', 480, 140);           // cerca: verá la barra
+  walkTo('inv', 1300, 780);          // lejos: no la verá
   const logs = snap('ceo').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents[0]!;
   assert.deepEqual(logs.actions?.map((a) => a.kind), ['delete'], 'el CEO solo ve su acción');
   assert.equal(send('cto', { t: 'channel_start', evidenceInstanceId: logs.instanceId, action: 'delete' }), 'action_not_allowed');
@@ -123,19 +123,19 @@ test('acciones canalizadas: el CEO purga los logs; moverse interrumpe; solo lo v
 
   // Moverse interrumpe.
   advance(4_000);
-  walkTo('ceo', 230, 150);
+  walkTo('ceo', 490, 120);
   const finished = inbox.get('cto')!.filter((m) => m.t === 'event' && m.event.e === 'channel_finished').at(-1);
   assert.ok(finished && finished.t === 'event' && finished.event.e === 'channel_finished' && !finished.event.ok && finished.event.reason === 'moved');
   assert.equal(snap('ceo').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents.length, 1);
 
   // Quieto 10 s: los logs desaparecen para todos.
-  walkTo('ceo', 200, 150);
+  walkTo('ceo', 460, 120);
   send('ceo', { t: 'channel_start', evidenceInstanceId: logs.instanceId, action: 'delete' });
   advance(10_000);
   assert.equal(snap('inv').interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents.length, 0);
 
   // Contrato a la trituradora (5 s) y empate en el voto: gana el CEO.
-  walkTo('ceo', 200, 550);
+  walkTo('ceo', 1780, 1205);
   const contract = snap('ceo').interactables.find((i) => i.id === 'spawn_CLUE_TORN_CONTRACT')!.contents[0]!.instanceId;
   send('ceo', { t: 'channel_start', evidenceInstanceId: contract, action: 'delete' });
   advance(5_000);
@@ -153,7 +153,7 @@ test('privacidad: nadie recibe el rol ni los objetivos secretos de otro jugador 
   const compiled = await nexus();
   const roles = { ceo: 'ROLE_CEO', cto: 'ROLE_CTO', inv: 'ROLE_INVESTOR', leak: 'ROLE_LEAKER' };
   const { room, inbox, send, walkTo, nextPhase } = await setupRoom(compiled, roles);
-  walkTo('inv', 1050, 550);
+  walkTo('inv', 1300, 780);
   send('inv', { t: 'interact', interactableId: 'spawn_CLUE_ENCRYPTED_PENDRIVE' });
   nextPhase(); // discusión
 
@@ -196,20 +196,21 @@ test('el caso original en formato libre se carga sin tocar el archivo', async ()
   const raw = JSON.parse(await readFile(cfg('scenarios/caso_fraude_tech_startup.json'), 'utf8'));
   const compiled = compileScenario(raw);
   assert.equal(compiled.roleSet.id, 'case_002_tech_fraud');
-  assert.equal(compiled.roleSet.maxPlayers, 4, 'solo hay 4 roles');
-  assert.ok(compiled.warnings.some((w) => w.includes('player_count.max')));
+  // fusión 8p: el caso legacy tiene ahora 12 roles posibles (4–12 jugadores) y ya no avisa de player_count.max.
+  assert.equal(compiled.roleSet.maxPlayers, 12, '4–12 jugadores');
+  assert.ok(!compiled.warnings.some((w) => w.includes('player_count.max')));
   const logs = compiled.map.evidence.find((e) => e.id === 'CLUE_SERVER_LOGS')!;
   assert.equal(logs.pocketable, false);
   assert.equal(logs.medium, 'digital/critica', 'el aspecto (marco del visor) sale del type del caso');
   assert.ok(logs.tags.includes('beneficia:ROLE_CTO') && logs.tags.includes('perjudica:ROLE_CEO'));
-  assert.deepEqual(compiled.map.interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.position, { x: 200, y: 150 });
+  assert.deepEqual(compiled.map.interactables.find((i) => i.id === 'spawn_CLUE_SERVER_LOGS')!.position, { x: 460, y: 120 });
   const type = (id: string) => compiled.scenario.evidence_spawns.find((e) => e.id === id)!.type;
   assert.deepEqual(['CLUE_SERVER_LOGS', 'CLUE_UNLOCKED_LAPTOP', 'CLUE_TORN_CONTRACT', 'CLUE_ENCRYPTED_PENDRIVE'].map(type), ['text', 'photo', 'item', 'item']);
   assert.equal(compiled.trial?.max_presented_per_player, 2, 'leído de las reglas de la confrontación');
-  assert.equal(compiled.phaseDurationsMs.investigation, 180_000);
-  assert.deepEqual(compiled.endings.map((e) => e.id), ['culpable_descubierto', 'culpable_impune']);
+  assert.equal(compiled.phaseDurationsMs.investigation, 300_000);   // fusión 8p: 300 s
+  assert.deepEqual(compiled.endings.map((e) => e.id), ['culpable_descubierto', 'culpable_impune', 'silencio_total']);   // fusión 8p: +silencio_total
   assert.deepEqual(logs.actions?.map((a) => [a.kind, a.seconds]), [['delete', 10], ['backup', 6]], 'deletion/backup → acciones canalizadas');
-  assert.deepEqual(compiled.trial?.options?.map((o) => o.accuses_role), ['ROLE_CEO', 'ROLE_CTO', 'ROLE_INVESTOR', 'ROLE_LEAKER'], 'una acusación por personaje');
+  assert.deepEqual(compiled.trial?.options?.map((o) => o.accuses_role), ['ROLE_CEO', 'ROLE_ACCOMPLICE', 'ROLE_CTO', 'ROLE_INVESTOR', 'ROLE_LEAKER', 'ROLE_SECURITY', 'ROLE_JOURNALIST', 'ROLE_CFO', 'ROLE_EMPLOYEE'], 'una acusación por personaje');   // fusión 8p: 9 personajes
 
   // Y se puede jugar: el veredicto contra el CEO hace ganar a los inocentes.
   const { send, nextPhase, snap } = await setupRoom(compiled, { a: 'ROLE_CEO', b: 'ROLE_CTO', c: 'ROLE_INVESTOR', d: 'ROLE_LEAKER' });
@@ -229,7 +230,7 @@ test('lo que se expone en la mesa llega a los clientes por delta', async () => {
   const raw = JSON.parse(await readFile(cfg('scenarios/caso_fraude_tech_startup.json'), 'utf8'));
   const { inbox, send, walkTo, nextPhase, advance, room } = await setupRoom(compileScenario(raw), { a: 'ROLE_CEO', b: 'ROLE_CTO', c: 'ROLE_INVESTOR', d: 'ROLE_LEAKER' });
   room.tick();
-  walkTo('b', 200, 150);
+  walkTo('b', 460, 120);
   const logs = room['projector'].snapshotFor('b').interactables.find((i: { id: string }) => i.id === 'spawn_CLUE_SERVER_LOGS')!.contents[0]!.instanceId;
   assert.equal(send('b', { t: 'channel_start', evidenceInstanceId: logs, action: 'backup' }), 'ok');
   advance(7_000);

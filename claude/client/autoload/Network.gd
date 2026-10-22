@@ -30,6 +30,10 @@ var _was_open := false
 var _sent_ms := {} # seq -> Time.get_ticks_msec() al enviar
 ## Ida y vuelta de la última intención confirmada (ms); -1 sin medir.
 var latency_ms := -1
+## Servidor local de la práctica «Primer día en NexusCore» (scripts/tutorial): mientras está
+## puesto, las intenciones van a él (handle_intent) en vez de al socket, y él contesta con
+## deliver(). Así la partida de práctica usa la misma interfaz que una real, sin servidor.
+var local_server: Object = null
 
 func _ready() -> void:
 	server_url = resolve_server_url(OS.get_cmdline_user_args() + OS.get_cmdline_args(), OS.get_environment("SERVER_URL"))
@@ -73,6 +77,13 @@ func forget_room() -> void:
 	_pending.clear()
 	_sent_ms.clear()
 
+## Cierra la conexión a propósito (menú en partida → "Cerrar servidor"). No es una caída:
+## no emite disconnected_from_server. El menú vuelve a conectar al necesitarlo (Account).
+func disconnect_from_server() -> void:
+	forget_room()
+	_was_open = false
+	_socket.close()
+
 ## Entrada directa a una sala, sin menú (bots y pruebas).
 ## room_code vacío = sala pública. Con código, todos los que lo usen juegan juntos.
 func connect_to_server(player_name: String, code: String = "", url: String = server_url) -> Error:
@@ -86,6 +97,13 @@ func connect_to_server(player_name: String, code: String = "", url: String = ser
 	return OK
 
 func send_intent(type: String, payload: Dictionary = {}) -> int:
+	if local_server != null:
+		_seq += 1
+		var local := payload.duplicate()
+		local["t"] = type
+		local["seq"] = _seq
+		local_server.call("handle_intent", local)
+		return _seq
 	if _socket.get_ready_state() != WebSocketPeer.STATE_OPEN:
 		return -1
 	_seq += 1
@@ -109,6 +127,10 @@ func _process(_delta: float) -> void:
 	elif state == WebSocketPeer.STATE_CLOSED and _was_open:
 		_was_open = false
 		EventBus.disconnected_from_server.emit(_socket.get_close_reason())
+
+## Mensaje del servidor local (tutorial), como si hubiera llegado por el socket.
+func deliver(msg: Dictionary) -> void:
+	_dispatch(msg)
 
 func _dispatch(msg: Dictionary) -> void:
 	match msg.get("t"):

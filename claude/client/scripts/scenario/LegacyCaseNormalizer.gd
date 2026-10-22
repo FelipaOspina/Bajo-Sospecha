@@ -25,6 +25,14 @@ static func evidence_type(raw: String) -> String:
 static func room_position(room_index: int, slot: int) -> Dictionary:
 	return {"x": 200 + (room_index % 3) * 440 + slot * 70, "y": 150 + int(room_index / 3) * 400}
 
+## Posición escrita en el caso, o {} si no la trae o no es válida.
+static func explicit_position(p: Variant) -> Dictionary:
+	if p is Array and p.size() == 2 and (p[0] is float or p[0] is int) and (p[1] is float or p[1] is int):
+		return {"x": float(p[0]), "y": float(p[1])}
+	if p is Dictionary and p.has("x") and p.has("y"):
+		return {"x": float(p["x"]), "y": float(p["y"])}
+	return {}
+
 ## Devuelve {scenario: Dictionary, warnings: PackedStringArray}.
 static func normalize(raw: Dictionary) -> Dictionary:
 	var warnings := PackedStringArray()
@@ -37,15 +45,30 @@ static func normalize(raw: Dictionary) -> Dictionary:
 	for r in _list(raw.get("roles")):
 		if r.has("hidden_ability"):
 			warnings.append("rol %s: hidden_ability \"%s\" aún no tiene mecánica; se ignora" % [r["role_id"], r["hidden_ability"].get("name", "")])
+		# Campos opcionales (partidas de 4 a 12): team, count, min_players, powers, knows_teammates, motive_targets.
+		var count := {"min": 1, "max": 1}
+		var raw_count := _dict(r.get("count"))
+		if raw_count.has("min") and raw_count.has("max"):
+			count = {"min": int(raw_count["min"]), "max": int(raw_count["max"])}
 		var role := {
 			"id": r["role_id"],
 			"name": r.get("display_name", r["role_id"]),
 			"description": r.get("starting_knowledge", ""),
-			"team": slug(str(r.get("alignment", r["role_id"])).split("/")[0]),
-			"count": {"min": 1, "max": 1},
+			"team": str(r["team"]) if str(r.get("team", "")) != "" else slug(str(r.get("alignment", r["role_id"])).split("/")[0]),
+			"count": count,
 			"secret_objectives": r.get("individual_objectives", []).duplicate(),
 			"modifiers": [],
 		}
+		if count["min"] == 0:
+			role["weight"] = 1
+		if r.get("min_players") != null:
+			role["min_players"] = int(r["min_players"])
+		if not _list(r.get("powers")).is_empty():
+			role["powers"] = _list(r["powers"]).map(func(p): return str(p))
+		if r.get("knows_teammates", false):
+			role["knows_teammates"] = true
+		if not _list(r.get("motive_targets")).is_empty():
+			role["motive_targets"] = _list(r["motive_targets"]).map(func(p): return str(p))
 		roles.append(role)
 		role_by_id[role["id"]] = role
 
@@ -55,6 +78,10 @@ static func normalize(raw: Dictionary) -> Dictionary:
 		var room_index := _find_room(rooms, str(c.get("room", "Sin sala")), warnings)
 		var slot: int = slots.get(room_index, 0)
 		slots[room_index] = slot + 1
+		# El caso puede fijar la posición en el plano ("position": {x, y} o [x, y]).
+		var pos := explicit_position(c.get("position"))
+		if pos.is_empty():
+			pos = room_position(room_index, slot)
 		var deleters: Array = _list(_dict(req.get("deletion_action")).get("authorized_roles")) if req.get("can_be_deleted", false) else []
 		var backers: Array = _list(_dict(req.get("backup_action")).get("authorized_roles"))
 		# deletion_action / backup_action → acciones canalizadas (las aplica el servidor).
@@ -78,18 +105,22 @@ static func normalize(raw: Dictionary) -> Dictionary:
 			"tags": tags,
 			"medium": "/".join(tags),
 			"room": c.get("room", ""),
-			"position": room_position(room_index, slot),
+			"position": pos,
 			"pocketable": req.get("can_be_pocketed", true),
 			"weight": c.get("evidence_weight", 1),
 			"benefits": backers,
 			"harms": deleters,
 			"actions": actions,
+			"incriminates": _list(c.get("incriminates")).duplicate(),
 		})
 
 	var player_count = raw.get("player_count")
-	if player_count is Dictionary and int(player_count.get("max", 0)) > roles.size():
-		warnings.append("player_count.max (%d) se reduce a %d: solo hay %d roles" % [player_count["max"], roles.size(), roles.size()])
-		player_count = {"min": mini(int(player_count.get("min", 0)), roles.size()), "max": roles.size()}
+	var seats := 0
+	for role in roles:
+		seats += int(role["count"]["max"])
+	if player_count is Dictionary and int(player_count.get("max", 0)) > seats:
+		warnings.append("player_count.max (%d) se reduce a %d: solo hay %d plazas de rol" % [player_count["max"], seats, seats])
+		player_count = {"min": mini(int(player_count.get("min", 0)), seats), "max": seats}
 
 	return {
 		"warnings": warnings,

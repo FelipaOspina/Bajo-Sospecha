@@ -17,8 +17,8 @@ test('el escenario de ejemplo compila y pasa el validador de roles', async () =>
   const { roleManager } = createRoleManager(
     new InMemoryRoleConfigSource({ [compiled.roleSet.id]: compiled.roleSet }), new SeededRandom(3));
   await roleManager.loadRoleSet(compiled.roleSet.id);
-  assert.equal(compiled.map.interactables.length, 5);
-  assert.deepEqual(compiled.map.interactables[1]!.position, { x: 640, y: 120 }, 'acepta posición como [x, y]');
+  assert.equal(compiled.map.interactables.length, 16);   // fusión 8p: +5 pistas (NDA, despido, SAI, taquilla, móvil)
+  assert.deepEqual(compiled.map.interactables[1]!.position, { x: 1080, y: 60 }, 'acepta posición como [x, y]');
   const assigned = roleManager.assignRoles(['a', 'b', 'c', 'd', 'e', 'f']);
   assert.equal(assigned.size, 6);
   assert.equal(roleManager.getRole('ROLE_CTO')!.objectives[0]!.type, 'narrative');
@@ -44,10 +44,10 @@ test('beneficia/perjudica se traducen en visibilidad y permisos', async () => {
     positionOf: (p) => positions.get(p), isAlive: () => true, currentPhase: () => 'investigation', now: () => 0,
   }, new EventBus<EvidenceEvents>());
 
-  positions.set('cto', { x: 200, y: 150 });
+  positions.set('cto', { x: 460, y: 120 });
   assert.deepEqual(sys.interact('cto', 'spawn_CLUE_SERVER_LOGS'), { ok: false, error: 'not_pocketable' });
 
-  positions.set('ceo', { x: 200, y: 550 });
+  positions.set('ceo', { x: 1780, y: 1205 });
   const contract = sys.interact('ceo', 'spawn_CLUE_TORN_CONTRACT');
   assert.ok(contract.ok);
   assert.deepEqual(sys.destroy('ceo', contract.value.instanceId), { ok: false, error: 'cannot_destroy' },

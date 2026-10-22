@@ -13,7 +13,8 @@ export const PROTOCOL_VERSION = 1;
 export type PlayerId = string;
 export type Vec2 = { x: number; y: number };
 export type VisibilityLevel = 'hidden' | 'partial' | 'full';
-export type RoomPhase = 'lobby' | 'briefing' | 'investigation' | 'discussion' | 'voting' | 'results';
+/** emergency: asamblea de emergencia tras reportar un cuerpo (pausa la investigación). */
+export type RoomPhase = 'lobby' | 'briefing' | 'investigation' | 'emergency' | 'discussion' | 'voting' | 'results';
 
 // ───────────── Cliente → Servidor ─────────────
 
@@ -30,12 +31,14 @@ export type ClientIntent =
   | (IntentBase & { t: 'create_room'; name?: string; protocol?: number })
   /** Entrar en una sala privada por su código. Rechazos: room_not_found, room_full, game_started. */
   | (IntentBase & { t: 'join_room'; roomCode: string; name?: string; protocol?: number })
-  /** Cola pública: al juntarse MATCH_SIZE jugadores se crea una sala que arranca sola. Llega 'queued'. */
+  /** Cola pública: con MATCH_MAX en cola arranca ya; con MATCH_MIN empieza una cuenta atrás de
+   *  MATCH_WAIT_MS y al vencer arranca con los que haya. Llega 'queued'. */
   | (IntentBase & { t: 'queue_match'; name?: string; protocol?: number })
   | (IntentBase & { t: 'leave_queue' })
   /** Salir de la sala actual (vuelta al menú) sin cerrar la conexión. */
   | (IntentBase & { t: 'leave_room' })
-  /** Chat de la sala (lobby). Llega a todos como evento 'chat'. */
+  /** Chat de la sala: lobby, debate (discussion/voting) y asamblea de emergencia. Llega a todos como
+   *  evento 'chat'. Rechazos: wrong_phase, empty_message, not_alive (fantasmas fuera del lobby). */
   | (IntentBase & { t: 'chat'; text: string })
   // ── Perfil, Executive Pass y tienda (monedas del juego; sin pagos reales) ──
   | (IntentBase & { t: 'claim_pass_reward'; level: number; track: 'free' | 'premium' })
@@ -48,6 +51,10 @@ export type ClientIntent =
    *  unknown_cosmetic, wrong_slot, cosmetic_locked. En el lobby los demás lo ven al momento. */
   | (IntentBase & { t: 'equip_cosmetic'; slot: 'outfit' | 'hat' | 'shoes' | 'bag'; cosmeticId: string | null })
   | (IntentBase & { t: 'buy_premium_pass' })
+  /** Tutorial local «Primer día en NexusCore» terminado: su recompensa (XP y monedas de
+   *  detective_path.tutorial_reward), una sola vez por perfil. Responde 'rewards' (source
+   *  'tutorial') y 'profile'. Rechazos: no_profile, already_claimed. */
+  | (IntentBase & { t: 'claim_tutorial_reward' })
   /** Skin preferida del perfil (la que se intenta llevar al entrar en una sala). */
   | (IntentBase & { t: 'select_skin'; skinId: string })
   /** Elegir skin de animal en el lobby (rechazada si otro jugador ya la lleva). */
@@ -60,10 +67,37 @@ export type ClientIntent =
   | (IntentBase & { t: 'channel_cancel' })
   | (IntentBase & { t: 'drop_evidence'; evidenceInstanceId: string })
   | (IntentBase & { t: 'destroy_evidence'; evidenceInstanceId: string })
+  /** Rechazo 'knocked_before' si te noquearon en la partida. */
   | (IntentBase & { t: 'present_evidence'; evidenceInstanceId: string })
+  /** Botón de emergencia (solo en la investigación): abre la asamblea de emergencia (fase 'emergency',
+   *  calledBy = quien la convoca, bodyId null). Una vez por jugador y partida; cuenta para el máximo
+   *  de emergencias. Rechazos: wrong_phase, not_alive, knocked, meeting_used, no_meetings_left. */
+  | (IntentBase & { t: 'call_meeting' })
+  /** Juicio final: pasar de la fase de debate a la fase de votación. Rechazos: wrong_phase, not_alive. */
+  | (IntentBase & { t: 'skip_to_voting' })
   /** Usar la habilidad activa de tu animal (solo en la investigación). Rechazos: wrong_phase,
    *  not_alive, no_ability, on_cooldown. Llega el evento 'ability_used'. */
   | (IntentBase & { t: 'use_ability' })
+  /** Silenciar a un jugador cercano (solo roles con power "silence"). La 1.ª vez queda noqueado 30 s;
+   *  la 2.ª, fantasma. Rechazos: wrong_phase, not_alive, knocked, no_power, too_early, on_cooldown,
+   *  target_not_alive (también si ya está noqueado), too_far (>90 px), no_motive (sin móvil:
+   *  ver you.motiveTargets), target_protected (escolta: la consume y pone el cooldown). */
+  | (IntentBase & { t: 'silence'; targetId: PlayerId })
+  /** Reportar un cuerpo a ≤160 px: abre la emergencia (máx. 3 por partida; después solo lo retira).
+   *  Rechazos: wrong_phase, not_alive, knocked, too_far, unknown_body. */
+  | (IntentBase & { t: 'report_body'; bodyId: string })
+  /** Jefe de Seguridad: protege 45 s a un jugador vivo a ≤160 px; cooldown 90 s.
+   *  Rechazos: wrong_phase, not_alive, knocked, no_power, on_cooldown, too_far, target_not_alive. */
+  | (IntentBase & { t: 'escort'; targetId: PlayerId })
+  /** Voto de la emergencia: a un jugador vivo, 'skip' o null (retirar). Solo vivos.
+   *  Rechazos: wrong_phase, not_alive, unknown_target. */
+  | (IntentBase & { t: 'emergency_vote'; targetId: PlayerId | 'skip' | null })
+  /** Solo fantasmas, cada 20 s: marca una posición 6 s para los vivos de su equipo.
+   *  Rechazos: not_ghost, on_cooldown, bad_position. */
+  | (IntentBase & { t: 'ghost_ping'; position: Vec2 })
+  /** Solo fantasmas: misión de 6 s a ≤80 px (moverse la cancela). Al completarla aparece una prueba.
+   *  Rechazos: not_ghost, wrong_phase, unknown_task, too_far, already_channeling. */
+  | (IntentBase & { t: 'ghost_task'; taskId: string })
   /** Voto a una decisión narrativa del juicio (null = retirar el voto). */
   | (IntentBase & { t: 'vote'; optionId: string | null });
 
@@ -96,7 +130,8 @@ export interface EvidenceView {
 
 /** Acción canalizada en curso, visible para el propio jugador y los cercanos. */
 export interface ChannelView {
-  kind: 'delete' | 'backup';
+  /** ghost_task: misión de fantasma (solo la ven los fantasmas). */
+  kind: 'delete' | 'backup' | 'ghost_task';
   label: string;
   /** Hora del servidor (ms). El cliente la convierte con el serverTime del welcome. */
   startedAt: number;
@@ -119,6 +154,63 @@ export interface PublicPlayerState {
   skinId?: string;
   /** Cosméticos puestos por hueco (outfit, hat, shoes, bag → id de shared/config/cosmetics). */
   look?: Partial<Record<'outfit' | 'hat' | 'shoes' | 'bag', string>>;
+  /** Fuera de la partida (silenciado dos veces o expulsado en una emergencia). */
+  ghost?: boolean;
+  /** Para receptores VIVOS los fantasmas van ocultos (sin posición actualizada): no se dibujan. */
+  hidden?: boolean;
+  /** Noqueado (1.er silencio): en el suelo hasta knockedUntil (hora del servidor). */
+  knocked?: boolean;
+  knockedUntil?: number;
+}
+
+/** Poderes de rol del receptor (horas del servidor en ms). */
+export interface PowersState {
+  /** readyAt ya incluye los primeros 60 s de la investigación y el cooldown de 60 s. */
+  silence?: { readyAt: number };
+  escort?: { readyAt: number; protecting: PlayerId | null; until: number | null };
+}
+
+/** A quién tiene MOTIVO para silenciar el receptor (solo se puede silenciar con móvil).
+ *  evidence: lleva una prueba que te incrimina; witness: te vio (a ti o a tu cómplice);
+ *  backup: sacó copia de una prueba que te incrimina; story: su rol (p. ej. te chantajea). */
+export interface MotiveTarget {
+  playerId: PlayerId;
+  reason: 'evidence' | 'witness' | 'backup' | 'story';
+  /** evidence/backup: nombre de la prueba. */
+  evidence?: string;
+}
+
+/** Misión de fantasma: ir al punto y canalizar 6 s. */
+export interface GhostTaskView {
+  id: string;
+  label: string;
+  position: Vec2;
+  done: boolean;
+}
+
+/** Cuerpo en el suelo. knocked: noqueado (desaparece al levantarse); dead: fantasma. */
+export interface BodyView {
+  id: string;
+  playerId: PlayerId;
+  position: Vec2;
+  reported: boolean;
+  kind: 'knocked' | 'dead';
+  /** Solo knocked: hora del servidor a la que se levanta. */
+  until?: number;
+}
+
+/** Asamblea de emergencia en curso (fase 'emergency'). */
+export interface EmergencyState {
+  calledBy: PlayerId;
+  bodyId: string | null;
+  /** Quién ha votado ya (no a quién). */
+  voted: PlayerId[];
+  myVote: PlayerId | 'skip' | null;
+  endsAt: number;
+  /** Ms de investigación que quedaban al abrirla (se restauran al volver). */
+  remaining: number;
+  /** Tras el recuento (se muestra unos segundos antes de volver a la investigación). */
+  result: { expelled: PlayerId | null; tally: Record<string, number> } | null;
 }
 
 /** Habilidad activa del animal del receptor (shared/config/abilities). Horas del servidor en ms. */
@@ -141,6 +233,20 @@ export interface PrivatePlayerState {
   ability?: AbilityState;
   /** Multiplicador de tu velocidad ahora (pasiva + acelerones); el servidor valida con él. */
   speedMultiplier?: number;
+  /** Poderes del rol (silence, escort). */
+  powers?: PowersState;
+  /** Eres un fantasma (te mueves libre, no interactúas ni votas). */
+  ghost: boolean;
+  /** Fantasmas: cuándo puedes volver a usar ghost_ping. */
+  ghostPingReadyAt?: number;
+  /** Solo roles con silence: jugadores con motivo (se recalcula en cada proyección). */
+  motiveTargets?: MotiveTarget[];
+  /** Ya te noquearon una vez: no puedes presentar pruebas en el juicio. */
+  wasKnocked?: boolean;
+  /** Ya usaste tu botón de emergencia (call_meeting) en esta partida. */
+  meetingUsed?: boolean;
+  /** Fantasmas: misiones (máx. 6 en total). */
+  ghostTasks?: GhostTaskView[];
 }
 
 export interface InteractableView {
@@ -150,6 +256,9 @@ export interface InteractableView {
   radius: number;
   /** Lo que el receptor percibe del contenido (vacío si no ve nada). */
   contents: EvidenceView[];
+  /** Contenedor "body": de quién son los objetos caídos y su rótulo ("Objetos caídos de X"). */
+  ownerId?: PlayerId;
+  label?: string;
 }
 
 /** Datos de la sala para la vista de lobby. */
@@ -174,6 +283,10 @@ export interface RoomSnapshot {
   interactables: InteractableView[];
   you: PrivatePlayerState | null;
   trial: TrialState;
+  /** Cuerpos en el suelo (noqueados y fantasmas sin reportar/reportados). */
+  bodies: BodyView[];
+  /** Asamblea de emergencia; null fuera de la fase 'emergency'. */
+  emergency: EmergencyState | null;
 }
 
 // ───────────── Juicio ─────────────
@@ -243,7 +356,21 @@ export type GameEvent =
   | { e: 'chat'; by: PlayerId; name: string; text: string; at: number }
   /** Alguien usó la activa de su animal. Las secretas (sigilo, engaño...) solo le llegan a él;
    *  marks (olfato) solo a quien la usó; affected: a quién alcanzó (rugido, aullido). */
-  | { e: 'ability_used'; by: PlayerId; abilityId: string; endsAt: number | null; marks?: string[]; affected?: PlayerId[] };
+  | { e: 'ability_used'; by: PlayerId; abilityId: string; endsAt: number | null; marks?: string[]; affected?: PlayerId[] }
+  /** Solo al asesino (completo) y a la víctima (SIN killer). knocked: noqueo con until; si no, fantasma. */
+  | { e: 'silenced'; killer?: PlayerId; victim: PlayerId; at: number; knocked: boolean; until?: number }
+  /** Solo a los vivos con línea de vista del asesino (≤900 px, sin muros por medio). */
+  | { e: 'witnessed'; killer: PlayerId; victim: PlayerId; at: number }
+  | { e: 'body_reported'; by: PlayerId; bodyId: string; victim: PlayerId }
+  /** Alguien pulsó el botón de emergencia (call_meeting); a continuación llega phase_changed → emergency. */
+  | { e: 'meeting_called'; by: PlayerId }
+  | { e: 'emergency_result'; expelled: PlayerId | null; tally: Record<string, number> }
+  /** Al asesino, al Jefe de Seguridad y al protegido. */
+  | { e: 'escort_blocked'; target: PlayerId }
+  /** A los vivos del equipo del fantasma; la marca dura hasta until. */
+  | { e: 'ghost_ping'; by: PlayerId; position: Vec2; until: number }
+  /** Misión fantasma completada: una pista brilla para los vivos hasta until. */
+  | { e: 'ghost_reveal'; interactableId: string; position: Vec2; until: number };
 
 export type ServerMessage =
   | { t: 'welcome'; playerId: PlayerId; protocol: number; roomCode: string; serverTime: number; snapshot: RoomSnapshot }
@@ -254,7 +381,28 @@ export type ServerMessage =
   | { t: 'rejected'; seq: number; reason: string }
   /** Perfil (nivel, XP, monedas, pase, skins). Tras 'hello' y tras cada cambio. */
   | { t: 'profile'; profile: unknown }
-  /** Posición en la cola pública (position 0 = fuera de la cola). */
-  | { t: 'queued'; position: number; waiting: number; matchSize: number }
-  /** Recompensas de la partida que acaba de terminar. */
-  | { t: 'rewards'; rewards: { xp: number; coins: number; won: boolean; levelsGained: number; passLevelsGained: number } };
+  /** Posición en la cola pública (position 0 = fuera de la cola). matchSize = máximo (MATCH_MAX),
+   *  minSize = mínimo (MATCH_MIN), startsAt = hora del servidor a la que arranca (null sin cuenta atrás). */
+  | { t: 'queued'; position: number; waiting: number; matchSize: number; minSize: number; startsAt: number | null }
+  /** Recompensas de la partida que acaba de terminar (o del tutorial). Privado: solo a su jugador. */
+  | { t: 'rewards'; rewards: RewardsView };
+
+/** Reto de la Ruta del Detective cumplido. */
+export interface ChallengeRewardView { id: string; text: string; level: number; xp: number; coins: number }
+
+export interface RewardsView {
+  /** XP total (partida + retos). */
+  xp: number;
+  coins: number;
+  won: boolean;
+  levelsGained: number;
+  passLevelsGained: number;
+  /** 'match' (fin de partida) o 'tutorial'. */
+  source?: 'match' | 'tutorial';
+  matchXp?: number;
+  levelBefore?: number;
+  level?: number;
+  challenges?: ChallengeRewardView[];
+  /** Recompensas por llegar a niveles de la Ruta (solo monedas y cosméticos). */
+  levelRewards?: { level: number; coins?: number; cosmetic?: string }[];
+}

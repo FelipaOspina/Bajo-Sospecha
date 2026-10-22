@@ -3,6 +3,7 @@ import type {
   EvidenceView,
   GameEvent,
   InteractableView,
+  MotiveTarget,
   PlayerId,
   PrivatePlayerState,
   PublicPlayerState,
@@ -21,6 +22,15 @@ import type { AbilitySystem } from '../domain/abilities/AbilitySystem.js';
 export const CHANNEL_VISIBLE_RADIUS = 500;
 import type { RoomState } from './RoomState.js';
 
+export type { MotiveTarget };
+
+/** Lo que el proyector pregunta a la sala sobre silenciar (reglas que viven en Room). */
+export interface SocialQuery {
+  motiveTargets(viewer: PlayerId): MotiveTarget[] | undefined;
+  silenceReadyAt(viewer: PlayerId): number;
+  now(): number;
+}
+
 /**
  * Convierte estado autoritativo en lo que UN jugador tiene derecho a saber.
  * Es el único punto donde se aplica el "fog of war" informativo: roles ajenos,
@@ -37,7 +47,15 @@ export class StateProjector {
     private readonly resolution: () => Resolution | null,
     private readonly channels: ChannelSystem,
     private readonly abilities?: AbilitySystem,
+    private readonly social?: SocialQuery,
   ) {}
+
+  /** Los vivos no ven a los fantasmas (los fantasmas ven a todos). */
+  private isGhostHiddenFor(viewer: PlayerId, actor: PlayerId): boolean {
+    if (viewer === actor || this.state.phase === 'results') return false;
+    const a = this.state.players.get(actor);
+    return !!a?.ghost && !this.state.players.get(viewer)?.ghost;
+  }
 
   /** ¿Ve el receptor lo que hace este jugador? (él mismo, o está cerca). Las habilidades
    *  alargan lo que ve el receptor (orejas largas, ojos de gato) o acortan lo que se ve
@@ -60,10 +78,11 @@ export class StateProjector {
 
   snapshotFor(viewer: PlayerId): RoomSnapshot {
     const teammates = new Set(this.roles.knownTeammates(viewer));
+    const now = this.social?.now() ?? Date.now();
     const players: PublicPlayerState[] = [...this.state.players.values()].map((p) => ({
       id: p.id,
       name: p.name,
-      position: p.position,
+      position: this.isGhostHiddenFor(viewer, p.id) ? p.lastSeenPosition : p.position,
       connected: p.connected,
       ready: p.ready,
       alive: p.alive,
@@ -71,6 +90,9 @@ export class StateProjector {
       ...(p.skinId ? { skinId: p.skinId } : {}),
       ...(p.look && Object.keys(p.look).length ? { look: { ...p.look } } : {}),
       ...this.channelOf(viewer, p.id),
+      ...(p.ghost ? { ghost: true } : {}),
+      ...(this.isGhostHiddenFor(viewer, p.id) ? { hidden: true } : {}),
+      ...(p.knockedUntil !== null && p.knockedUntil > now ? { knocked: true, knockedUntil: p.knockedUntil } : {}),
       ...((p.id === viewer || teammates.has(p.id) || this.state.phase === 'results')
         ? { roleId: this.roles.getRoleOf(p.id)?.id }
         : {}),
@@ -82,7 +104,11 @@ export class StateProjector {
       position: i.position,
       radius: i.radius,
       contents: i.contents().map((id) => this.evidenceView(viewer, id)).filter((v): v is EvidenceView => v !== null),
+      ...(typeof (i as { ownerId?: unknown }).ownerId === 'string'
+        ? { ownerId: (i as unknown as { ownerId: string }).ownerId, label: (i as unknown as { label: string }).label }
+        : {}),
     }));
+    const em = this.state.emergency;
 
     return {
       version: this.state.version,
@@ -100,10 +126,27 @@ export class StateProjector {
       interactables,
       you: this.privateState(viewer),
       trial: this.trialState(viewer),
+      bodies: this.state.bodies.map((b) => ({ ...b, position: { ...b.position } })),
+      emergency: em ? {
+        calledBy: em.calledBy,
+        bodyId: em.bodyId,
+        voted: [...em.votes.keys()],
+        myVote: em.votes.get(viewer) ?? null,
+        endsAt: em.endsAt,
+        remaining: em.remaining,
+        result: em.result ? { expelled: em.result.expelled, tally: { ...em.result.tally } } : null,
+      } : null,
     };
   }
 
   private channelOf(viewer: PlayerId, actor: PlayerId): { channel?: PublicPlayerState['channel'] } {
+    const gc = this.state.players.get(actor)?.ghostChannel;
+    if (gc) {
+      // Misión de fantasma: solo la ven los fantasmas (y él mismo).
+      if (viewer !== actor && !this.state.players.get(viewer)?.ghost) return {};
+      return { channel: { kind: 'ghost_task', label: gc.label, startedAt: gc.startedAt, durationMs: gc.durationMs } };
+    }
+    if (this.isGhostHiddenFor(viewer, actor)) return {};
     const c = this.channels.get(actor);
     if (!c || !this.canWatch(viewer, actor)) return {};
     return { channel: this.disguised(viewer, actor, { kind: c.kind, label: c.label, startedAt: c.startedAt, durationMs: c.durationMs }) };
@@ -211,7 +254,31 @@ export class StateProjector {
         completed: this.objectives.get(o.type)?.isComplete(viewer, o.params ?? {}, this.world) ?? false,
       })),
       ...this.abilityState(viewer),
+      ...this.socialState(viewer),
     };
+  }
+
+  /** Poderes, fantasma, misiones y móviles del receptor. */
+  private socialState(viewer: PlayerId): Pick<PrivatePlayerState, 'powers' | 'ghost' | 'ghostPingReadyAt' | 'wasKnocked' | 'meetingUsed' | 'ghostTasks' | 'motiveTargets'> {
+    const p = this.state.players.get(viewer);
+    const powers = this.roles.getRoleOf(viewer)?.powers ?? [];
+    const out: Pick<PrivatePlayerState, 'powers' | 'ghost' | 'ghostPingReadyAt' | 'wasKnocked' | 'meetingUsed' | 'ghostTasks' | 'motiveTargets'> = { ghost: !!p?.ghost };
+    if (!p) return out;
+    if (powers.length) {
+      out.powers = {
+        ...(powers.includes('silence') ? { silence: { readyAt: this.social?.silenceReadyAt(viewer) ?? p.silenceReadyAt } } : {}),
+        ...(powers.includes('escort') ? { escort: { ...p.escort } } : {}),
+      };
+    }
+    if (p.ghost) {
+      out.ghostPingReadyAt = p.ghostPingReadyAt;
+      out.ghostTasks = p.ghostTasks.map((t) => ({ ...t, position: { ...t.position } }));
+    }
+    if (p.wasKnocked) out.wasKnocked = true;
+    if (p.meetingUsed) out.meetingUsed = true;
+    const motives = this.social?.motiveTargets(viewer);
+    if (motives) out.motiveTargets = motives;
+    return out;
   }
 
   private abilityState(viewer: PlayerId): Pick<PrivatePlayerState, 'ability' | 'speedMultiplier'> {

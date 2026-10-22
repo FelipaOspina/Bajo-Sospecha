@@ -13,6 +13,9 @@ var default_visibility: String
 var visibility_rules: Array[Dictionary] = []  # [{tags: [..], level: ".."}]
 var objectives: Array[Dictionary] = []        # [{id, type, description, params}]
 var modifiers: Array[Dictionary] = []         # [{id, params}]
+var min_players := 0                          # solo entra en el reparto desde N jugadores (0 = siempre)
+var powers: Array[String] = []                # "silence", "escort"
+var motive_targets: Array[String] = []        # roles a los que siempre tiene motivo para silenciar
 
 static func from_dict(d: Dictionary) -> RoleDefinition:
 	var r := RoleDefinition.new()
@@ -29,4 +32,9 @@ static func from_dict(d: Dictionary) -> RoleDefinition:
 		r.objectives.append(o)
 	for m in d.get("modifiers", []):
 		r.modifiers.append(m)
+	r.min_players = int(d.get("minPlayers", 0))
+	for p in d.get("powers", []):
+		r.powers.append(str(p))
+	for t in d.get("motiveTargets", []):
+		r.motive_targets.append(str(t))
 	return r

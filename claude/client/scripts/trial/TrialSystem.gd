@@ -15,6 +15,8 @@ const REASON_TEXT := {
 	"not_in_inventory": "No tienes esa prueba.",
 	"unknown_option": "Esa opción ya no existe.",
 	"not_alive": "Ya no puedes votar.",
+	"knocked_before": "Te noquearon durante la investigación: no puedes presentar pruebas en el juicio.",
+	"ghost": "Los fantasmas no votan.",
 }
 
 var network: Node
@@ -42,13 +44,17 @@ func is_active() -> bool:
 	return phase() in ["discussion", "voting"]
 
 func can_vote() -> bool:
-	return phase() == "voting"
+	return phase() == "voting" and not GameState.is_ghost()
+
+## Te noquearon alguna vez: en el juicio puedes votar, pero no presentar pruebas.
+func was_knocked() -> bool:
+	return GameState.was_knocked()
 
 func presented_by_me() -> int:
 	return deck.filter(func(c): return c["presentedBy"] == GameState.local_player_id()).size()
 
 func can_present() -> bool:
-	return is_active() and presented_by_me() < max_presented
+	return is_active() and presented_by_me() < max_presented and not was_knocked() and not GameState.is_ghost()
 
 ## Lo que puedo exponer: mi inventario (incluidas copias de pistas fijas), sin lo que ya está en la mesa.
 func presentable() -> Array[EvidenceData]:
@@ -63,6 +69,12 @@ func presentable() -> Array[EvidenceData]:
 func present(instance_id: String) -> void:
 	_pending[network.send_intent(Protocol.I_PRESENT, {"evidenceInstanceId": instance_id})] = true
 
+func call_meeting() -> void:
+	network.send_intent(Protocol.I_CALL_MEETING, {})
+
+func skip_to_voting() -> void:
+	network.send_intent(Protocol.I_SKIP_TO_VOTING, {})
+
 func vote(option_id) -> void:
 	_pending[network.send_intent(Protocol.I_VOTE, {"optionId": option_id})] = true
 
@@ -74,7 +86,7 @@ func player_name(id: String) -> String:
 
 func _sync(s: Dictionary) -> void:
 	var t: Dictionary = s.get("trial", {})
-	var signature := JSON.stringify([t, s.get("phase"), GameState.my_private_state().get("inventory", [])])
+	var signature := JSON.stringify([t, s.get("phase"), GameState.my_private_state().get("inventory", []), GameState.is_ghost()])
 	if signature == _last_signature:
 		return
 	_last_signature = signature

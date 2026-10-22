@@ -12,8 +12,8 @@ const DATA_PATH := "res://data/skins/skins.json"
 const SKINS_ROOT := "res://assets/sprites/skins/"
 const VIEWS := ["frente", "lado", "espalda", "caminando"]
 const FPS := 8.0
-const DEFAULT_SKIN := {"id": "zorro", "name": "Zorro", "ear_type": "tall_pointed", "fur": "#D9622B",
-	"fur_light": "#F8E8DA", "outfit": "#262838", "accent": "#9A9AB3", "scale_body": [0.9, 0.95]}
+const DEFAULT_SKIN := {"id": "pinguino", "name": "CEO", "ear_type": "none", "snout": "beak", "patches": "face",
+	"fur": "#2B3D55", "fur_light": "#FFFFFF", "outfit": "#2563EB", "accent": "#DC2626", "shoes": "#2563EB", "bag": "#1E293B", "scale_body": [1.0, 1.04]}
 
 static var _data: Dictionary
 

@@ -56,6 +56,13 @@ var focused_instance := ""   # carta de la mesa elegida para verla en el centro
 @onready var _skip_btn: Button = %SkipVoteButton
 @onready var _tally_label: Label = %VoteTallyLabel
 
+var _skip_to_voting_btn: Button
+var _chat_container: PanelContainer
+var _chat_messages_box: VBoxContainer
+var _chat_input: LineEdit
+var _chat_send_btn: Button
+var _chat_scroll: ScrollContainer
+
 func _ready() -> void:
 	if assembly == null:
 		assembly = TrialAssemblyManager.new()
@@ -79,6 +86,22 @@ func _ready() -> void:
 	assembly.selection_changed.connect(func(_e: EvidenceData) -> void: _refresh())
 	assembly.action_failed.connect(func(reason: String) -> void: _status.text = reason)
 	assembly.evidence_presented.connect(_on_placed)
+
+	# Botón para avanzar a votación si ya se terminó de debatir
+	_skip_to_voting_btn = Button.new()
+	_skip_to_voting_btn.name = "SkipToVotingButton"
+	_skip_to_voting_btn.text = "⏩ Pasar a Votación"
+	_skip_to_voting_btn.custom_minimum_size = Vector2(160, 36)
+	UiPalette.style_button(_skip_to_voting_btn, UiPalette.CYAN)
+	_skip_to_voting_btn.pressed.connect(func() -> void:
+		assembly.skip_to_voting()
+	)
+	var top_hbox: HBoxContainer = _timer_card.get_parent() as HBoxContainer
+	if top_hbox:
+		top_hbox.add_child(_skip_to_voting_btn)
+		top_hbox.move_child(_skip_to_voting_btn, 1)
+
+	_build_debate_chat()
 	_refresh()
 
 # ───── API ─────
@@ -87,6 +110,9 @@ func _ready() -> void:
 func open_board() -> void:
 	show()
 	_refresh()
+	# Aviso a quien fue noqueado: vota, pero no presenta pruebas.
+	if trial and trial.was_knocked():
+		_status.text = TrialSystem.REASON_TEXT["knocked_before"]
 
 func close_board() -> void:
 	hide()
@@ -119,6 +145,10 @@ func _refresh() -> void:
 	if not visible:
 		return
 	_phase_subtitle.text = PHASE_SUBTITLES.get(trial.phase(), Protocol.PHASE_LABELS.get(trial.phase(), ""))
+	var ghost := GameState.is_ghost()
+	if _skip_to_voting_btn:
+		_skip_to_voting_btn.visible = trial.phase() == "discussion" and not ghost
+	_refresh_chat_input(ghost)
 	_refresh_seats()
 	_refresh_hand()
 	_refresh_table()
@@ -197,10 +227,25 @@ func _layout_seats() -> void:
 	var radius := Vector2(area.x * 0.42, area.y * 0.42)
 	var first := deg_to_rad(SEAT_ARC_FROM)
 	var span := deg_to_rad(SEAT_ARC_TO - SEAT_ARC_FROM)
+	# Reparto a distancias iguales sobre la elipse (no a ángulos iguales): con 12
+	# asientos, a ángulos iguales se amontonan en los laterales.
+	const STEPS := 240
+	var points := PackedVector2Array()
+	var lengths := PackedFloat32Array([0.0])
+	for k in STEPS + 1:
+		var a := first + span * k / STEPS
+		points.append(center + Vector2(cos(a) * radius.x, sin(a) * radius.y))
+		if k > 0:
+			lengths.append(lengths[k - 1] + points[k].distance_to(points[k - 1]))
+	var total := lengths[STEPS]
+	var k := 0
 	for i in seats.size():
 		var seat: Control = seats[i]
-		var angle := first + (span * i / (seats.size() - 1) if seats.size() > 1 else span / 2.0)
-		var at := center + Vector2(cos(angle) * radius.x, sin(angle) * radius.y)
+		var want := total * (float(i) / (seats.size() - 1) if seats.size() > 1 else 0.5)
+		while k < STEPS and lengths[k + 1] < want:
+			k += 1
+		var seg := maxf(lengths[mini(k + 1, STEPS)] - lengths[k], 0.001)
+		var at := points[k].lerp(points[mini(k + 1, STEPS)], clampf((want - lengths[k]) / seg, 0.0, 1.0))
 		seat.reset_size()
 		seat.position = at - seat.size / 2.0
 
@@ -209,7 +254,9 @@ func _refresh_hand() -> void:
 	_hand_title.text = "TU MANO · %d/%d expuestas" % [trial.presented_by_me(), trial.max_presented]
 	var mine := assembly.player_inventory()
 	if mine.is_empty():
-		_hand_box.add_child(_label("No tienes pruebas que exponer.", true))
+		var empty := _label("No tienes pruebas que exponer.", true)
+		empty.custom_minimum_size = Vector2(320, 0)   # en un HBox, sin ancho mínimo saldría una letra por línea
+		_hand_box.add_child(empty)
 	for e in mine:
 		var card := EvidenceCard.new().setup(e, trial.can_present())
 		card.custom_minimum_size = Vector2(170, 0)
@@ -286,7 +333,9 @@ func _refresh_votes() -> void:
 	_vote_selector.disabled = not assembly.can_accuse()
 	_skip_btn.disabled = not assembly.can_accuse()
 	_refresh_vote_buttons()
-	if not assembly.can_accuse():
+	if GameState.is_ghost():
+		_tally_label.text = "Eres un fantasma: puedes mirar, pero no votar."
+	elif not assembly.can_accuse():
 		_tally_label.text = "La votación se abre al terminar el debate."
 	else:
 		_tally_label.text = "Han votado %d de %d" % [assembly.voted_count(), GameState.players().size()]
@@ -361,3 +410,112 @@ static func _clear(n: Node) -> void:
 	for c in n.get_children():
 		n.remove_child(c)
 		c.queue_free()
+
+# ───── Chat de Debate ─────
+
+func _build_debate_chat() -> void:
+	var hud := get_node_or_null("MainHUD")
+	if hud == null:
+		return
+	
+	_chat_container = PanelContainer.new()
+	_chat_container.name = "DebateChatPanel"
+	_chat_container.add_theme_stylebox_override("panel", UiPalette.glass_panel(10, 12))
+	_chat_container.anchor_left = 1.0
+	_chat_container.anchor_top = 0.0
+	_chat_container.anchor_right = 1.0
+	_chat_container.anchor_bottom = 0.0
+	_chat_container.offset_left = -310.0
+	_chat_container.offset_right = -20.0
+	_chat_container.offset_top = 74.0
+	_chat_container.offset_bottom = 340.0
+	_chat_container.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud.add_child(_chat_container)
+	
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	_chat_container.add_child(vbox)
+	
+	var title_lbl := Label.new()
+	title_lbl.text = "💬 Debate en Vivo"
+	title_lbl.add_theme_font_override("font", UiPalette.heading_font())
+	title_lbl.add_theme_color_override("font_color", UiPalette.AMBER)
+	vbox.add_child(title_lbl)
+	
+	_chat_scroll = ScrollContainer.new()
+	_chat_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_chat_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_chat_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(_chat_scroll)
+	
+	_chat_messages_box = VBoxContainer.new()
+	_chat_messages_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_chat_messages_box.add_theme_constant_override("separation", 4)
+	_chat_scroll.add_child(_chat_messages_box)
+	
+	var input_row := HBoxContainer.new()
+	input_row.add_theme_constant_override("separation", 6)
+	vbox.add_child(input_row)
+	
+	_chat_input = LineEdit.new()
+	_chat_input.placeholder_text = "Escribe tu argumento..."
+	_chat_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_chat_input.text_submitted.connect(_on_send_chat)
+	input_row.add_child(_chat_input)
+	
+	_chat_send_btn = Button.new()
+	_chat_send_btn.text = "Enviar"
+	UiPalette.style_button(_chat_send_btn, UiPalette.AMBER)
+	_chat_send_btn.pressed.connect(func() -> void:
+		_on_send_chat(_chat_input.text)
+	)
+	input_row.add_child(_chat_send_btn)
+	
+	EventBus.chat_received.connect(_on_chat_received)
+
+## Los fantasmas leen el debate pero no escriben (el servidor lo rechaza con not_alive).
+func _refresh_chat_input(ghost: bool) -> void:
+	if _chat_input == null:
+		return
+	_chat_input.editable = not ghost
+	_chat_input.placeholder_text = "Los fantasmas no pueden hablar" if ghost else "Escribe tu argumento..."
+	if _chat_send_btn:
+		_chat_send_btn.disabled = ghost
+
+func _on_send_chat(text: String) -> void:
+	var trimmed := text.strip_edges()
+	if trimmed.is_empty() or GameState.is_ghost():
+		return
+	if Account.send_chat(trimmed) >= 0:
+		if _chat_input:
+			_chat_input.clear()
+
+func _on_chat_received(by: String, author: String, text: String, _at: int) -> void:
+	# Solo el chat del juicio final (el del lobby y el de la emergencia van en sus pantallas).
+	if _chat_messages_box == null or not GameState.phase() in ["discussion", "voting"]:
+		return
+	var mine := by == GameState.local_player_id()
+	var line := RichTextLabel.new()
+	line.bbcode_enabled = true
+	line.fit_content = true
+	line.scroll_active = false
+	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	line.add_theme_font_size_override("normal_font_size", 12)
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var author_color: Color = UiPalette.AMBER if mine else Color("#7DD3FC")
+	line.text = "[color=#%s]%s:[/color] %s" % [author_color.to_html(false), _escape(author), _escape(text)]
+	_chat_messages_box.add_child(line)
+	while _chat_messages_box.get_child_count() > 30:
+		var old = _chat_messages_box.get_child(0)
+		_chat_messages_box.remove_child(old)
+		old.queue_free()
+	_scroll_debate_chat_to_end.call_deferred()
+
+func _scroll_debate_chat_to_end() -> void:
+	if _chat_scroll and is_inside_tree():
+		await get_tree().process_frame
+		_chat_scroll.scroll_vertical = int(_chat_scroll.get_v_scroll_bar().max_value)
+
+static func _escape(text: String) -> String:
+	return text.replace("[", "[lb]")

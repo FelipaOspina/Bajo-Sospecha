@@ -2,7 +2,7 @@
 
 Juego multijugador de deducción social con roles narrativos y recolección de pruebas.
 
-- **Cliente:** Godot 4 (GDScript).
+- **Cliente:** Godot 4.3.stable (GDScript).
 - **Servidor autoritativo:** Node.js + TypeScript, WebSocket.
 - **Contrato compartido:** `shared/` (protocolo y configuración JSON de roles y pruebas).
 
@@ -39,7 +39,7 @@ juego-de-roles/
 │   │   ├── net/                    # Room, RoomDirectory (salas por código), StateProjector, DeltaEncoder, WsServer
 │   │   └── index.ts                # Composition root
 │   └── test/                       # node:test (27 tests)
-├── client/                         # Proyecto Godot 4
+├── client/                         # Proyecto Godot 4.3.stable
 │   ├── autoload/                   # EventBus, Network, GameState
 │   ├── scripts/
 │   │   ├── roles/                  # RoleManager, RoleDefinition, RoleConfigSource, ModifierRegistry
@@ -310,7 +310,8 @@ SCENARIO=../scenarios/caso_fraude_tech_startup.json npm start   # caso en format
 
 # Cliente
 ./tools/sync-config.sh
-# Abrir client/ con Godot 4.3+ y ejecutar. En Main: scenario_id, player_name y room_code.
+# Abrir client/project.godot con Godot 4.3.stable (versión estándar, no .NET) y ejecutar.
+# En Main: scenario_id, player_name y room_code.
 # Hacen falta minPlayers clientes con el mismo código de sala para empezar.
 # Por defecto el cliente va al servidor de producción (wss://bajo-sospecha.onrender.com).
 # Para probar con el servidor local:
@@ -333,7 +334,20 @@ godot --headless --path client res://tests/PetLobbyTest.tscn
   - El servidor se duerme sin uso y la primera conexión tarda hasta un minuto. El cliente espera 75 s y avisa.
   - El disco no es persistente: los perfiles de `server/data/profiles.json` se pierden al reiniciar.
 - **Variables opcionales:** `SCENARIO` y `ROLE_SET`.
-- **Android:** la exportación necesita el permiso INTERNET.
+
+**Versión de Godot y exportación.**
+- **Versión:** el proyecto es de Godot **4.3.stable**, edición estándar (no .NET). `client/project.godot` lo ha escrito el propio Godot 4.3 (`config_version=5`, `config/features` = `"4.3", "Forward Plus"`), y todas las escenas y recursos están en `format=3`.
+- **Plantillas:** deben ser las de la misma edición y versión, en la carpeta `export_templates/4.3.stable/` de Godot. En Windows está en `%APPDATA%\Godot\`. Las de .NET van en `4.3.stable.mono` y no sirven con el editor estándar.
+- **Qué proyecto abrir:** `client/project.godot`. La raíz del repositorio es el prototipo "Bajo Sospecha", otro proyecto distinto. El `.gdignore` de esta carpeta impide que el prototipo escanee el juego, `node_modules` incluido.
+- **Presets:** están en `client/export_presets.cfg`. Hay dos: "Windows Desktop" y "Android".
+  - Los dos incluyen los `*.json` de `data/` y dejan fuera `tests/`, `tools/` y los sprites HD.
+  - El resultado va a `export/`, fuera de `client/`.
+- **Pantalla:** la base es 1280×720 con estiramiento `canvas_items` y aspecto `expand`. La interfaz se escala en ventanas pequeñas y en móviles en vez de solaparse.
+- **Android:**
+  - Ya tiene el permiso INTERNET. Sin él no se conecta al servidor.
+  - `import_etc2_astc` está activado, porque Godot no exporta a Android sin él.
+  - El editor necesita el Android SDK, Java 17 y el keystore de depuración (Editor → Configuración del editor → Exportar → Android).
+  - Antes de publicar en Play Store, cambia `package/unique_name`, que por defecto es `com.example.juegoderoles`, y pon un icono en `application/config/icon`.
 
 ## Pendiente / siguientes pasos
 

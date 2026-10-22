@@ -216,24 +216,27 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(70, 44)
 layout_mode = 2
 size_flags_vertical = 4
+focus_mode = 0
 tooltip_text = "Conexión con el servidor"
 
-[node name="Box" type="VBoxContainer" parent="Root/Header/ConnectionButton"]
+[node name="Box" type="HBoxContainer" parent="Root/Header/ConnectionButton"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 10.0
+offset_right = -12.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 6
 alignment = 1
 
 [node name="WifiIcon" type="Control" parent="Root/Header/ConnectionButton/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_vertical = 4
 mouse_filter = 2
 script = ExtResource("5")
 icon = "wifi"
@@ -241,6 +244,7 @@ icon = "wifi"
 [node name="PingLabel" type="Label" parent="Root/Header/ConnectionButton/Box"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 4
 text = "—"
 horizontal_alignment = 1
 
